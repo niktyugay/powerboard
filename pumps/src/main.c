@@ -11,8 +11,11 @@
 
 #include "stm32f10x.h"
 #include "spi.h"
+#include "syringe.h"
 			
 uint32_t delay = 0;
+
+extern syringe syringe1, syringe2;
 
 void delay_ms(uint32_t value) {
 	delay = value;

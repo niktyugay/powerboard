@@ -52,77 +52,103 @@ void SPI1_IRQHandler() {
 	if (SPI_I2S_GetITStatus(SPI1, SPI_I2S_IT_RXNE) == SET) {
 		aRxBuffer[ubRxIndex++] = SPI_I2S_ReceiveData(SPI1);
 		switch(aRxBuffer[0]) {
-			case SPEED1:
+			case M1_SPEED1:
 				break;
-			case SPEED1 | CMD_MASK:
+			case M1_SPEED1 | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case SPEED2:
+			case M2_SPEED2:
 				break;
-			case SPEED2 | CMD_MASK:
+			case M2_SPEED2 | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case START_STOP_M1 | CMD_MASK:
+			case M1_EN | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case START_STOP_M2 | CMD_MASK:
+			case M2_EN | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case ENC_1:
+			case M1_DIRECTION:
 				break;
-			case ENC_2:
+			case M1_DIRECTION | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
+				break;
+			case M2_DIRECTION:
+				break;
+			case M2_DIRECTION | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
+				break;
+			case M1_ENC:
+				break;
+			case M2_ENC:
 				break;
 			case VALVE1:
 				break;
-			case VALVE1 | CMD_MASK:
-				break;
-			case MOTOR1_DIRECTION:
-				break;
-			case MOTOR1_DIRECTION | CMD_MASK:
-				break;
-			case MOTOR2_DIRECTION:
-				break;
-			case MOTOR2_DIRECTION | CMD_MASK:
+			case VALVE1 | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
 			case VALVE2:
 				break;
-			case VALVE2 | CMD_MASK:
+			case VALVE2 | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case DOS_NOSTAT1:
+			case DOS1_EN:
 				break;
-			case DOS_START1:
+			case DOS1_EN | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case DOS_STOP1:
+			case DOS2_EN:
 				break;
-			case DOS_PAUSE1:
+			case DOS2_EN | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case DOS_PROCEED1:
+			case DOS1_SINGLE_DOSE:
 				break;
-			case DOS_NOCOMM1:
+			case DOS1_SINGLE_DOSE | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case DOS_VOLUME1:
+			case DOS2_SINGLE_DOSE:
 				break;
-			case DOS_SPEED1:
+			case DOS2_SINGLE_DOSE | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case DOS_GOTOPOS1:
+			case DOS1_SPEED:
 				break;
-			case DOS_CHANGE_COEF_DOSE_0_1ML1:
+			case DOS1_SPEED | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
-			case DOS_NOSTAT2:
+			case DOS2_SPEED:
 				break;
-			case DOS_START2:
-				break;
-			case DOS_STOP2:
-				break;
-			case DOS_PAUSE2:
-				break;
-			case DOS_PROCEED2:
-				break;
-			case DOS_NOCOMM2:
-				break;
-			case DOS_VOLUME2:
-				break;
-			case DOS_SPEED2:
-				break;
-			case DOS_GOTOPOS2:
-				break;
-			case DOS_CHANGE_COEF_DOSE_0_1ML2:
+			case DOS2_SPEED | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+				}
 				break;
 		}
 	}

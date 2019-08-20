@@ -66,3 +66,44 @@ void initHardware() {
 	TIM_Cmd(TIM2, ENABLE);
 	TIM_Cmd(TIM3, ENABLE);
 }
+
+void initSyringes() {
+	syringe1.en = false;
+	syringe1.singleDose = 0;
+	syringe1.speed = 0;
+	syringe1.setPWM = setSpeedSyringe1;
+	syringe1.setPWM(0);
+	syringe2.en = false;
+	syringe2.singleDose = 0;
+	syringe2.speed = 0;
+	syringe1.setPWM = setSpeedSyringe2;
+	syringe2.setPWM(0);
+}
+
+void setPWMSyringe1(uint8_t dutyCycle) {
+	TIM_OCInitTypeDef TIM_OCInitStructure;
+	TIM_OCInitStructure.TIM_Pulse = dutyCycle;
+	TIM_OC1Init(TIM4, &TIM_OCInitStructure);
+}
+
+void setPWMSyringe2(uint8_t dutyCycle) {
+	TIM_OCInitTypeDef TIM_OCInitStructure;
+	TIM_OCInitStructure.TIM_Pulse = dutyCycle;
+	TIM_OC2Init(TIM4, &TIM_OCInitStructure);
+}
+
+void setSpeedSyringe1(uint8_t speed) {
+
+}
+
+void setSpeedSyringe2(uint8_t speed) {
+
+}
+
+void setVolumeSyringe1(uint8_t volume) {
+
+}
+
+void setVolumeSyringe2(uint8_t volume) {
+
+}

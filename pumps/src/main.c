@@ -24,12 +24,20 @@ void delay_ms(uint32_t value) {
 
 void SysTick_Handler(void) {
 	if (delay > 0) {delay--;}
+
+	/*--------------work with MHN---------------*/
+	syringe1.handler();
+	syringe2.handler();
+	/*------------------------------------------*/
+
 }
 
 int main(void)
 {
 	SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock/1000);
+
+	initSyringes();
 
 	while(1) {
 

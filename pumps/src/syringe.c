@@ -1,7 +1,7 @@
 /*
  * syringe.c
  *
- *  Created on: 19 àâã. 2019 ã.
+ *  Created on: 19 ï¿½ï¿½ï¿½. 2019 ï¿½.
  *      Author: tugay
  */
 
@@ -64,9 +64,13 @@ void initHardware() {
 	TIM_EncoderInterfaceConfig(TIM3, TIM_EncoderMode_TI12, TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);
 	TIM_Cmd(TIM2, ENABLE);
 	TIM_Cmd(TIM3, ENABLE);
+	TIM_Cmd(TIM4, ENABLE);
 }
 
 void initSyringes() {
+	initHardware();
+
+	syringe1.handler = syringe1Handler;
 	syringe1.param.en = false;
 	syringe1.setPWM = setPWMSyringe1;
 	syringe1.setSpeed = setSpeedSyringe1;
@@ -74,10 +78,13 @@ void initSyringes() {
 	syringe1.getPWM = getPWMSyringe1;
 	syringe1.getSpeed = getSpeedSyringe1;
 	syringe1.en = syringe1en;
+	syringe1.backToStartPosition = backToStartPositionSyringe1;
 	syringe1.setPWM(0);
 	syringe1.setDose(0);
 	syringe1.setSpeed(0);
+	syringe1.param.timerForSpeed = 0;
 
+	syringe2.handler = syringe2Handler;
 	syringe2.param.en = false;
 	syringe2.setPWM = setPWMSyringe2;
 	syringe2.setSpeed = setSpeedSyringe2;
@@ -85,57 +92,103 @@ void initSyringes() {
 	syringe2.getPWM = getPWMSyringe2;
 	syringe2.getSpeed = getSpeedSyringe2;
 	syringe2.en = syringe2en;
+	syringe2.backToStartPosition = backToStartPositionSyringe2;
 	syringe2.setPWM(0);
 	syringe2.setDose(0);
 	syringe2.setSpeed(0);
+	syringe2.param.timerForSpeed = 0;
 }
 
 void setPWMSyringe1(uint8_t dutyCycle) {
+	if (dutyCycle < 0) {
+		dutyCycle = 0;
+	}
+	else if (dutyCycle > 100) {
+		dutyCycle  = 100;
+	}
 	syringe1.param.pwm = dutyCycle;
 }
 
 void setPWMSyringe2(uint8_t dutyCycle) {
+	if (dutyCycle < 0) {
+		dutyCycle = 0;
+	}
+	else if (dutyCycle > 100) {
+		dutyCycle  = 100;
+	}
 	syringe2.param.pwm = dutyCycle;
 }
 
 void setSpeedSyringe1(uint8_t speed) {
+	if (speed < 0) {
+		speed = 0;
+	}
 	syringe1.param.speed = speed;
 	syringe1.param.period = 3600000/(speed/100);
 }
 
 void setSpeedSyringe2(uint8_t speed) {
+	if (speed < 0) {
+		speed = 0;
+	}
 	syringe2.param.speed = speed;
 	syringe2.param.period = 3600000/(speed/100);
 }
 
-void setVolumeSyringe1(uint8_t dose) {
+void setDoseSyringe1(uint16_t dose) {
+	if (dose > 200000) {
+		dose = 200000;
+	}
 	syringe1.param.dose = dose;
 }
 
-void setVolumeSyringe2(uint8_t dose) {
+void setDoseSyringe2(uint16_t dose) {
+	if (dose > 20000) {
+		dose = 20000;
+	}
 	syringe2.param.dose = dose;
 }
 
 void	syringe1en(bool state) {
+	TIM_OCInitTypeDef TIM_OCInitStructure;
 	if (state) {
-		TIM_OCInitTypeDef TIM_OCInitStructure;
 		TIM_OCInitStructure.TIM_Pulse = syringe1.getPWM;
 		TIM_OC1Init(TIM4, &TIM_OCInitStructure);
-		TIM_Cmd(TIM4, ENABLE);
 	}
 	else {
-
+		TIM_OCInitStructure.TIM_Pulse = 0;
+		TIM_OC1Init(TIM4, &TIM_OCInitStructure);
 	}
 }
 
 void	syringe2en(bool state) {
+	TIM_OCInitTypeDef TIM_OCInitStructure;
 	if (state) {
-		TIM_OCInitTypeDef TIM_OCInitStructure;
 		TIM_OCInitStructure.TIM_Pulse = syringe2.getPWM;
 		TIM_OC2Init(TIM4, &TIM_OCInitStructure);
-		TIM_Cmd(TIM4, ENABLE);
 	}
 	else {
+		TIM_OCInitStructure.TIM_Pulse = 0;
+		TIM_OC2Init(TIM4, &TIM_OCInitStructure);
+	}
+}
 
+void	backToStartPositionSyringe1() {
+
+}
+
+void	backToStartPositionSyringe2() {
+
+}
+
+void	syringe1Handler() {
+	if (syringe1.param.en) {
+		syringe1.param.timerForSpeed++;
+	}
+}
+
+void	syringe2Handler() {
+	if (syringe2.param.en) {
+		syringe2.param.timerForSpeed++;
 	}
 }

@@ -23,8 +23,7 @@ typedef struct {
 
 typedef struct {
 	syringe_varibles 		param;
-	void					(*setPWM)(uint8_t);
-	uint8_t					(*getPWM)(void);
+
 	void					(*setSpeed)(uint16_t);
 	uint16_t				(*getSpeed)(void);
 	void					(*setDose)(uint16_t);
@@ -33,6 +32,11 @@ typedef struct {
 	void					(*setVolume)(uint16_t);
 	uint16_t				(*getVolume)(void);
 	void					(*handler)(void);
+
+	void					(*setPWM)(uint8_t);
+	uint8_t					(*getPWM)(void);
+	void					(*setEncCnt)(uint16_t);
+	uint16_t				(*getEncCnt)(void);
 } syringe;
 
 void 						initHardware(void);
@@ -42,6 +46,11 @@ void 						setPWMSyringe1(uint8_t dutyCycle);
 uint8_t						getPWMSyringe1(void);
 void 						setPWMSyringe2(uint8_t dutyCycle);
 uint8_t						getPWMSyringe2(void);
+void						setEncCntSyringe1(uint16_t value);
+uint16_t					getEncCntSyringe1(void);
+void						setEncCntSyringe2(uint16_t value);
+uint16_t					getEncCntSyringe2(void);
+
 void 						setSpeedSyringe1(uint16_t volume);
 uint16_t					getSpeedSyringe1(void);
 void 						setSpeedSyringe2(uint16_t volume);

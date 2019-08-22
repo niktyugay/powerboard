@@ -24,12 +24,6 @@ void delay_ms(uint32_t value) {
 
 void SysTick_Handler(void) {
 	if (delay > 0) {delay--;}
-
-	/*--------------work with MHN---------------*/
-	syringe1.handler();
-	syringe2.handler();
-	/*------------------------------------------*/
-
 }
 
 int main(void)
@@ -40,6 +34,9 @@ int main(void)
 	initSyringes();
 
 	while(1) {
-
+		/*--------------work with MHN---------------*/
+		syringe1.handler();
+		syringe2.handler();
+		/*------------------------------------------*/
 	}
 }

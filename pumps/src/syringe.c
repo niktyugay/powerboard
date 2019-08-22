@@ -13,12 +13,17 @@ void initHardware() {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
 	TIM_OCInitTypeDef TIM_OCInitStructure;
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+	// PWM init
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseInitStructure.TIM_Period = 8000;
@@ -33,14 +38,13 @@ void initHardware() {
 	TIM_OCInitStructure.TIM_Pulse = 0;
 	TIM_OC1Init(TIM4, &TIM_OCInitStructure);
 	TIM_OC2Init(TIM4, &TIM_OCInitStructure);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	// AIN1,2; BIN1,2; STBY pins init
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	GPIO_SetBits(GPIOB, GPIO_Pin_8);
 	GPIO_SetBits(GPIOB, GPIO_Pin_9);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14 | GPIO_Pin_15 | GPIO_Pin_13;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -48,9 +52,7 @@ void initHardware() {
 	GPIO_SetBits(GPIOC, GPIO_Pin_14);
 	GPIO_SetBits(GPIOC, GPIO_Pin_15);
 	GPIO_SetBits(GPIOC, GPIO_Pin_13);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+	// encoder init
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_6 | GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -73,6 +75,8 @@ void initSyringes() {
 	syringe1.handler = syringe1Handler;
 	syringe1.param.en = false;
 	syringe1.setPWM = setPWMSyringe1;
+	syringe1.setEncCnt = setEncCntSyringe1;
+	syringe1.getEncCnt = getEncCntSyringe1;
 	syringe1.setSpeed = setSpeedSyringe1;
 	syringe1.setDose = setDoseSyringe1;
 	syringe1.getPWM = getPWMSyringe1;
@@ -87,6 +91,8 @@ void initSyringes() {
 	syringe2.handler = syringe2Handler;
 	syringe2.param.en = false;
 	syringe2.setPWM = setPWMSyringe2;
+	syringe2.setEncCnt = setEncCntSyringe2;
+	syringe2.getEncCnt = getEncCntSyringe2;
 	syringe2.setSpeed = setSpeedSyringe2;
 	syringe2.setDose = setDoseSyringe2;
 	syringe2.getPWM = getPWMSyringe2;
@@ -182,13 +188,14 @@ void	backToStartPositionSyringe2() {
 }
 
 void	syringe1Handler() {
-	if (syringe1.param.en) {
-		syringe1.param.timerForSpeed++;
+	if (syringe1.param.dose != 0) {
+		if (syringe1.getEncCnt == syringe1.param.dose) {
+			syringe1.param.dose = 0;
+			syringe1.en(false);
+		}
 	}
 }
 
 void	syringe2Handler() {
-	if (syringe2.param.en) {
-		syringe2.param.timerForSpeed++;
-	}
+
 }

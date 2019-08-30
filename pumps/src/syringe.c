@@ -9,7 +9,7 @@
 
 syringe syringe1, syringe2;
 
-void initHardware() {
+void	initHardware() {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
 	TIM_OCInitTypeDef TIM_OCInitStructure;
@@ -69,24 +69,18 @@ void initHardware() {
 	TIM_Cmd(TIM4, ENABLE);
 }
 
-void initSyringes() {
+void	initSyringes() {
 	initHardware();
 
 	syringe1.handler = syringe1Handler;
 	syringe1.param.en = false;
 	syringe1.setPWM = setPWMSyringe1;
-	syringe1.setEncCnt = setEncCntSyringe1;
 	syringe1.getEncCnt = getEncCntSyringe1;
 	syringe1.setSpeed = setSpeedSyringe1;
 	syringe1.setDose = setDoseSyringe1;
 	syringe1.getPWM = getPWMSyringe1;
 	syringe1.getSpeed = getSpeedSyringe1;
 	syringe1.en = syringe1en;
-	syringe1.backToStartPosition = backToStartPositionSyringe1;
-	syringe1.setPWM(0);
-	syringe1.setDose(0);
-	syringe1.setSpeed(0);
-	syringe1.param.timerForSpeed = 0;
 
 	syringe2.handler = syringe2Handler;
 	syringe2.param.en = false;
@@ -98,14 +92,19 @@ void initSyringes() {
 	syringe2.getPWM = getPWMSyringe2;
 	syringe2.getSpeed = getSpeedSyringe2;
 	syringe2.en = syringe2en;
-	syringe2.backToStartPosition = backToStartPositionSyringe2;
+
+	syringe1.setPWM(0);
+	syringe1.setDose(0);
+	syringe1.setSpeed(0);
+	syringe1.param.timerForSpeed = 0;
+
 	syringe2.setPWM(0);
 	syringe2.setDose(0);
 	syringe2.setSpeed(0);
 	syringe2.param.timerForSpeed = 0;
 }
 
-void setPWMSyringe1(uint8_t dutyCycle) {
+void	setPWMSyringe1(uint8_t dutyCycle) {
 	if (dutyCycle < 0) {
 		dutyCycle = 0;
 	}
@@ -115,7 +114,11 @@ void setPWMSyringe1(uint8_t dutyCycle) {
 	syringe1.param.pwm = dutyCycle;
 }
 
-void setPWMSyringe2(uint8_t dutyCycle) {
+uint8_t	getPWMSyringe1() {
+	return syringe1.param.pwm;
+}
+
+void	setPWMSyringe2(uint8_t dutyCycle) {
 	if (dutyCycle < 0) {
 		dutyCycle = 0;
 	}
@@ -125,7 +128,27 @@ void setPWMSyringe2(uint8_t dutyCycle) {
 	syringe2.param.pwm = dutyCycle;
 }
 
-void setSpeedSyringe1(uint8_t speed) {
+uint8_t	getPWMSyringe2() {
+	return syringe2.param.pwm;
+}
+
+void	setEncCntSyringe1(uint16_t value) {
+
+}
+
+uint16_t	getEncCntSyringe1() {
+	return 0;
+}
+
+void	setEncCntSyringe2(uint16_t value) {
+
+}
+
+uint16_t	getEncCntSyringe2() {
+	return 0;
+}
+
+void	setSpeedSyringe1(uint16_t speed) {
 	if (speed < 0) {
 		speed = 0;
 	}
@@ -133,7 +156,11 @@ void setSpeedSyringe1(uint8_t speed) {
 	syringe1.param.period = 3600000/(speed/100);
 }
 
-void setSpeedSyringe2(uint8_t speed) {
+uint16_t	getSpeedSyringe1() {
+	return syringe1.param.speed;
+}
+
+void	setSpeedSyringe2(uint16_t speed) {
 	if (speed < 0) {
 		speed = 0;
 	}
@@ -141,14 +168,18 @@ void setSpeedSyringe2(uint8_t speed) {
 	syringe2.param.period = 3600000/(speed/100);
 }
 
-void setDoseSyringe1(uint16_t dose) {
-	if (dose > 200000) {
-		dose = 200000;
+uint16_t	getSpeedSyringe2() {
+	return syringe2.param.speed;
+}
+
+void	setDoseSyringe1(uint16_t dose) {
+	if (dose > 20000) {
+		dose = 20000;
 	}
 	syringe1.param.dose = dose;
 }
 
-void setDoseSyringe2(uint16_t dose) {
+void	setDoseSyringe2(uint16_t dose) {
 	if (dose > 20000) {
 		dose = 20000;
 	}
@@ -158,7 +189,7 @@ void setDoseSyringe2(uint16_t dose) {
 void	syringe1en(bool state) {
 	TIM_OCInitTypeDef TIM_OCInitStructure;
 	if (state) {
-		TIM_OCInitStructure.TIM_Pulse = syringe1.getPWM;
+		TIM_OCInitStructure.TIM_Pulse = syringe1.getPWM();
 		TIM_OC1Init(TIM4, &TIM_OCInitStructure);
 	}
 	else {
@@ -170,7 +201,7 @@ void	syringe1en(bool state) {
 void	syringe2en(bool state) {
 	TIM_OCInitTypeDef TIM_OCInitStructure;
 	if (state) {
-		TIM_OCInitStructure.TIM_Pulse = syringe2.getPWM;
+		TIM_OCInitStructure.TIM_Pulse = syringe2.getPWM();
 		TIM_OC2Init(TIM4, &TIM_OCInitStructure);
 	}
 	else {
@@ -189,7 +220,7 @@ void	backToStartPositionSyringe2() {
 
 void	syringe1Handler() {
 	if (syringe1.param.dose != 0) {
-		if (syringe1.getEncCnt == syringe1.param.dose) {
+		if (syringe1.getEncCnt() == syringe1.param.dose) {
 			syringe1.param.dose = 0;
 			syringe1.en(false);
 		}

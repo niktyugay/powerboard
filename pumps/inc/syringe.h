@@ -67,7 +67,5 @@ void						syringe2Handler();
 
 void						syringe1en(bool state);
 void						syringe2en(bool state);
-void						backToStartPositionSyringe1(void);
-void						backToStartPositionSyringe2(void);
 
 #endif /* SYRINGE_H_ */

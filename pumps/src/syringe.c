@@ -317,11 +317,11 @@ Position	getPositionSyringe2() {
 	return syringe2.param.position;
 }
 
-Cover	getStateCoverSyringe1() {
+CoverState	getStateCoverSyringe1() {
 	return syringe1.cover.state;
 }
 
-Cover	getStateCoverSyringe2() {
+CoverState	getStateCoverSyringe2() {
 	return syringe2.cover.state;
 }
 
@@ -419,14 +419,14 @@ void	syringe1Timer() {
 		if (hallSensorSyringe1.timer_1 >= hallSensorSyringe1.delay) {
 			hallSensorSyringe1.timer_1 = 0;
 			syringe1.en(false);
-			syringe1.cover(OPEN);
+			syringe1.cover.state = OPEN;
 		}
 	}
 	else if (hallSensorSyringe1.status == RELEASED) {
 		hallSensorSyringe1.timer_2++;
 		if (hallSensorSyringe1.timer_2 >= hallSensorSyringe1.delay) {
 			hallSensorSyringe1.timer_2 = 0;
-			syringe1.cover(CLOSE);
+			syringe1.cover.state = CLOSE;
 		}
 	}
 
@@ -512,14 +512,14 @@ void	syringe2Timer() {
 		if (hallSensorSyringe2.timer_1 >= hallSensorSyringe2.delay) {
 			hallSensorSyringe2.timer_1 = 0;
 			syringe2.en(false);
-			syringe2.cover(OPEN);
+			syringe2.cover.state = OPEN;
 		}
 	}
 	else if (hallSensorSyringe2.status == RELEASED) {
 		hallSensorSyringe2.timer_2++;
 		if (hallSensorSyringe2.timer_2 >= hallSensorSyringe2.delay) {
 			hallSensorSyringe2.timer_2 = 0;
-			syringe2.cover(CLOSE);
+			syringe2.cover.state = CLOSE;
 		}
 	}
 	// Limit switch

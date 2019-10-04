@@ -150,6 +150,6 @@ Position					getPositionSyringe1(void);
 void						setPositionSyringe2(Position position);
 Position					getPositionSyringe2(void);
 
-Cover						getStateCoverSyringe1(void);
-Cover						getStateCoverSyringe2(void);
+CoverState					getStateCoverSyringe1(void);
+CoverState					getStateCoverSyringe2(void);
 #endif /* SYRINGE_H_ */

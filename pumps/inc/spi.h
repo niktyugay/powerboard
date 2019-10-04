@@ -1,7 +1,7 @@
 /*
  * spi.h
  *
- *  Created on: 16 ���. 2019 �.
+ *  Created on: 16 ���. 2019 �.
  *      Author: tugay
  */
 
@@ -34,6 +34,9 @@
 #define DOS2_SINGLE_DOSE					0x0E
 #define DOS1_SPEED							0x0F
 #define DOS2_SPEED							0x10
+#define DOS1_VOLUME     					0x11    // set нету
+#define DOS2_VOLUME     					0x12    // set нету
+#define DOS_COVERS							0x13
 
 void SPI_Config(void);
 

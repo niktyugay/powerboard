@@ -15,7 +15,7 @@
 			
 uint32_t delay = 0;
 
-extern syringe syringe1, syringe2;
+extern Syringe syringe1, syringe2;
 
 void delay_ms(uint32_t value) {
 	delay = value;
@@ -24,6 +24,8 @@ void delay_ms(uint32_t value) {
 
 void SysTick_Handler(void) {
 	if (delay > 0) {delay--;}
+	syringe1.timer();
+	syringe2.timer();
 }
 
 int main(void)
@@ -31,12 +33,15 @@ int main(void)
 	SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock/1000);
 
+	SPI_Config();
 	initSyringes();
 
+	//syringe1.setDirection(PUSH);
+	//syringe1.setPWM(100);
+	//syringe1.en(true);
+
 	while(1) {
-		/*--------------work with MHN---------------*/
 		syringe1.handler();
 		syringe2.handler();
-		/*------------------------------------------*/
 	}
 }

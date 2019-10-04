@@ -1,7 +1,7 @@
 /*
  * spi.c
  *
- *  Created on: 16 àâã. 2019 ã.
+ *  Created on: 16 ï¿½ï¿½ï¿½. 2019 ï¿½.
  *      Author: tugay
  */
 
@@ -43,8 +43,8 @@ void SPI_Config() {
 	SPI_InitStructure.SPI_CRCPolynomial = 7;
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Slave;
 	SPI_Init(SPI1, &SPI_InitStructure);
-	SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_RXNE, ENABLE);
-	NVIC_EnableIRQ(SPI1_IRQn);
+	//SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_RXNE, ENABLE);
+	//NVIC_EnableIRQ(SPI1_IRQn);
 	SPI_Cmd(SPI1, ENABLE);
 }
 

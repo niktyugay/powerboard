@@ -42,6 +42,8 @@ typedef enum	{
 	PRESSED,
 	RELEASED
 }	ButtonStatus;
+#define	DELAY_CLICK			175
+#define	DELAY_LONGCLICK		1000
 typedef struct	{
 	uint32_t				timer_1;
 	uint32_t				timer_2;
@@ -50,6 +52,7 @@ typedef struct	{
 	uint16_t				delayClick;
 	uint16_t				delayLongClick;
 }	Buttons;
+#define	DELAY_SENSOR_CLICK	100
 typedef struct	{
 	uint32_t				timer_1;
 	uint32_t				timer_2;
@@ -57,32 +60,31 @@ typedef struct	{
 	uint16_t				delay;
 }	Sensors;
 typedef struct	{
-	uint8_t					pwm;
+	uint16_t				pwm;
 	Rotation				rotation;
 	void					(*setPWM)(uint8_t);
-	uint16_t				(*getPWM)(void);
+	uint8_t					(*getPWM)(void);
 	void					(*setRotation)(Rotation);
 } Motor;
 typedef struct	{
 	uint8_t					timer;
 	uint8_t					PERIOD;
 	uint32_t				cnt;
+	uint16_t				delta;
 	uint16_t				timOld;
 	uint16_t				timCurrent;
-	uint16_t				(*getEncoder)(void);
 } Encoder;
 typedef struct	{
 	Sensors					hallSensor;
 	CoverState				state;
 	CoverState				(*getState)(void);
+	void					(*handler)(void);
 } Cover;
 typedef struct	{
 	uint32_t				timer;
 	uint32_t 				PERIOD;
 	uint16_t				speed;
 	uint16_t				dose;
-	void					(*setSpeed)(uint16_t);
-	uint16_t				(*getSpeed)(void);
 } Speed;
 typedef struct	{
 	bool 					en;
@@ -92,64 +94,53 @@ typedef struct	{
 	Position				position;
 } Syringe_varibles;
 typedef struct	{
-	void					(*en)(bool);
-	void					(*handler)(void);
-	void					(*timer)(void);
 	Syringe_varibles 		param;
 	Motor					motor;
 	Encoder					encoder;
 	Cover					cover;
+	Sensors					startSensor, endSensor;
 	Speed					speed;
+	void					(*handler)(void);
+	void					(*timer)(void);
+
+	void					(*en)(bool);
 	void					(*setDose)(uint16_t);
-	Sensors					startSensor, endSensors;
-	void					(*setVolume)(uint16_t);
+	void					(*setSpeed)(uint16_t);
+	uint16_t				(*getSpeed)(void);
 	uint16_t				(*getVolume)(void);
-	void					(*setPosition)(Position);
-	Position				(*getPosition)(void);
-	void					(*setDirection)(void);
-	Direction				(*getDirection)(void);
+	void					(*buttonUp)(ButtonsMode);
+	void					(*buttonDown)(ButtonsMode);
 } Syringe;
+
 void 						initHardware(void);
 void 						initSyringes(void);
 
-void						syringe1en(bool state);
-void						syringe2en(bool state);
-
 void						syringe1Handler(void);
 void						syringe2Handler(void);
-
 void						syringe1Timer(void);
 void						syringe2Timer(void);
 
-void 						setPWMSyringe1(uint8_t dutyCycle);
-uint16_t					getPWMSyringe1(void);
-void 						setPWMSyringe2(uint8_t dutyCycle);
-uint16_t					getPWMSyringe2(void);
-
-uint16_t					getEncoderSyringe1(void);
-uint16_t					getEncoderSyringe2(void);
-
+void						syringe1en(bool state);
+void						syringe2en(bool state);
+void 						setDoseSyringe1(uint16_t value);
+void 						setDoseSyringe2(uint16_t value);
 void 						setSpeedSyringe1(uint16_t volume);
 uint16_t					getSpeedSyringe1(void);
 void 						setSpeedSyringe2(uint16_t volume);
 uint16_t					getSpeedSyringe2(void);
-
-void 						setDoseSyringe1(uint16_t value);
-void 						setDoseSyringe2(uint16_t value);
-
 uint16_t					getVolumeSyringe1(void);
 uint16_t					getVolumeSyringe2(void);
+void						buttonUpSyringe1(ButtonsMode);
+void						buttonDownSyringe1(ButtonsMode);
+void						buttonUpSyringe2(ButtonsMode);
+void						buttonDownSyringe2(ButtonsMode);
 
-void						setDirectionSyringe1(Direction direction);
-Direction					getDirectionSyringe1(void);
-void						setDirectionSyringe2(Direction direction);
-Direction					getDirectionSyringe2(void);
-
-void						setPositionSyringe1(Position position);
-Position					getPositionSyringe1(void);
-void						setPositionSyringe2(Position position);
-Position					getPositionSyringe2(void);
-
+void 						setPWMSyringe1(uint8_t dutyCycle);
+uint8_t						getPWMSyringe1(void);
+void 						setPWMSyringe2(uint8_t dutyCycle);
+uint8_t						getPWMSyringe2(void);
+void						setRotationSyringe1(Rotation);
+void						setRotationSyringe2(Rotation);
 CoverState					getStateCoverSyringe1(void);
 CoverState					getStateCoverSyringe2(void);
 #endif /* SYRINGE_H_ */

@@ -25,7 +25,7 @@ void delay_ms(uint32_t value) {
 void SysTick_Handler(void) {
 	if (delay > 0) {delay--;}
 	syringe1.timer();
-	syringe2.timer();
+	//syringe2.timer();
 }
 
 int main(void)
@@ -36,12 +36,13 @@ int main(void)
 	SPI_Config();
 	initSyringes();
 
-	//syringe1.setDirection(PUSH);
-	//syringe1.setPWM(100);
-	//syringe1.en(true);
+	syringe1.motor.setPWM(50);
+	syringe1.motor.setRotation(UNCLOCKWISE);
+
+	syringe1.en(true);
 
 	while(1) {
 		syringe1.handler();
-		syringe2.handler();
+		//syringe2.handler();
 	}
 }

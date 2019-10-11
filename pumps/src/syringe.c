@@ -97,6 +97,7 @@ void	initSyringes() {
 	syringe1.param.direction = 			STOP;
 	syringe1.param.position = 			START;
 	syringe1.encoder.cnt = 				0;
+	syringe1.encoder.delta =			0;
 	syringe1.encoder.timCurrent = 		0;
 	syringe1.encoder.timOld =			0;
 	syringe1.encoder.timer = 			0;
@@ -106,37 +107,47 @@ void	initSyringes() {
 	syringe1.timer =					syringe1Timer;
 	syringe1.setSpeed =					setSpeedSyringe1;
 	syringe1.getSpeed =					getSpeedSyringe1;
-	syringe1.setSpeed(0);
 	syringe1.speed.PERIOD =				0;
 	syringe1.speed.timer =				0;
+	syringe1.speed.speed =				0;
 	syringe1.getVolume = 				getVolumeSyringe1;
 	syringe1.setDose = 					setDoseSyringe1;
-	syringe1.setDose(0);
-	syringe1.buttonUp =					buttonUpSyringe1;
-	syringe1.buttonDown =				buttonDownSyringe1;
+	syringe1.buttonUp.delayClick =		DELAY_CLICK;
+	syringe1.buttonUp.delayLongClick =	DELAY_LONGCLICK;
+	syringe1.buttonUp.mode =				DEFAULT;
+	syringe1.buttonUp.status =			NO_EVENT;
+	syringe1.buttonUp.timer_1 =			0;
+	syringe1.buttonUp.timer_2 = 			0;
+	syringe1.buttonDown.delayClick =		DELAY_CLICK;
+	syringe1.buttonDown.delayLongClick =	DELAY_LONGCLICK;
+	syringe1.buttonDown.mode =			DEFAULT;
+	syringe1.buttonDown.status =			NO_EVENT;
+	syringe1.buttonDown.timer_1 =		0;
+	syringe1.buttonDown.timer_2 = 		0;
 	syringe1.motor.setRotation = 		setRotationSyringe1;
 	syringe1.motor.setRotation(BREAK);
-	syringe1.motor.setPWM = 			setPWMSyringe1;
-	syringe1.motor.getPWM = 			getPWMSyringe1;
-	syringe1.motor.setPWM(0);
+	syringe1.motor.setPWM = 				setPWMSyringe1;
+	syringe1.motor.getPWM = 				getPWMSyringe1;
+	syringe1.motor.pwm = 				0;
 	syringe1.cover.state = 				CLOSE;
 	syringe1.cover.hallSensor.delay =	DELAY_SENSOR_CLICK;
 	syringe1.cover.getState =			getStateCoverSyringe1;
 	syringe1.startSensor.status = 		NO_EVENT;
 	syringe1.startSensor.timer_1 =		0;
 	syringe1.startSensor.timer_2 =		0;
-	syringe1.startSensor.delay =		DELAY_SENSOR_CLICK;
-	syringe1.endSensor.status = 		NO_EVENT;
-	syringe1.endSensor.timer_1 =		0;
-	syringe1.endSensor.timer_2 =		0;
+	syringe1.startSensor.delay =			DELAY_SENSOR_CLICK;
+	syringe1.endSensor.status = 			NO_EVENT;
+	syringe1.endSensor.timer_1 =			0;
+	syringe1.endSensor.timer_2 =			0;
 	syringe1.endSensor.delay =			DELAY_SENSOR_CLICK;
-
+	/*
 	syringe2.param.en =					false;
 	syringe2.param.volume = 			0;
 	syringe2.param.dose = 				0;
 	syringe2.param.direction = 			STOP;
 	syringe2.param.position = 			START;
 	syringe2.encoder.cnt = 				0;
+	syringe2.encoder.delta =			0;
 	syringe2.encoder.timCurrent = 		0;
 	syringe2.encoder.timOld =			0;
 	syringe2.encoder.timer = 			0;
@@ -164,6 +175,7 @@ void	initSyringes() {
 	syringe2.cover.getState =			getStateCoverSyringe2;
 	syringe2.startSensor.delay =		DELAY_SENSOR_CLICK;
 	syringe2.endSensor.delay =			DELAY_SENSOR_CLICK;
+	*/
 }
 
 void	setRotationSyringe1(Rotation rotation) {
@@ -171,13 +183,13 @@ void	setRotationSyringe1(Rotation rotation) {
 		case	UNCLOCKWISE:
 			GPIO_SetBits(GPIOB, GPIO_Pin_8);
 			GPIO_ResetBits(GPIOB, GPIO_Pin_9);
-			syringe1.motor.rotation = CLOCKWISE;
+			syringe1.motor.rotation = UNCLOCKWISE;
 			syringe1.param.direction = PUSH;
 			break;
 		case	CLOCKWISE:
 			GPIO_ResetBits(GPIOB, GPIO_Pin_8);
 			GPIO_SetBits(GPIOB, GPIO_Pin_9);
-			syringe1.motor.rotation = UNCLOCKWISE;
+			syringe1.motor.rotation = CLOCKWISE;
 			syringe1.param.direction = PULL;
 			break;
 		case	BREAK:
@@ -243,7 +255,7 @@ uint8_t	getPWMSyringe2() {
 void	setSpeedSyringe1(uint16_t speed) {
 	if (speed > 0) {
 		syringe1.speed.speed = speed;
-		syringe1.speed.PERIOD = 3600000/(speed/100);
+		syringe1.speed.PERIOD = ONE_HOUR_MS/speed;
 	}
 	else {
 		syringe1.speed.speed = 0;
@@ -271,11 +283,15 @@ uint16_t	getSpeedSyringe2() {
 }
 
 void	setDoseSyringe1(uint16_t value) {
-	syringe1.param.dose = syringe1.encoder.cnt - (DOSE_O_1ML*value)/100;
+	syringe1.param.dose = value;
+	syringe1.encoder.targetCnt = syringe1.encoder.cnt - (DOSE_O_1ML*value);
+	syringe1.motor.setPWM(50);
+	syringe1.motor.setRotation(UNCLOCKWISE);
 }
 
 void	setDoseSyringe2(uint16_t value) {
-	syringe2.param.dose = syringe2.encoder.cnt - (DOSE_O_1ML*value)/100;
+	syringe2.param.dose = value;
+	syringe2.encoder.targetCnt = syringe2.encoder.cnt - (DOSE_O_1ML*value);
 }
 
 uint16_t	getVolumeSyringe1() {
@@ -284,50 +300,6 @@ uint16_t	getVolumeSyringe1() {
 
 uint16_t	getVolumeSyringe2() {
 	return syringe2.param.volume;
-}
-
-void	buttonUpSyringe1(ButtonsMode mode) {
-	switch(mode) {
-	case CLICK:
-		break;
-	case LONG_CLICK:
-		break;
-	case DEFAULT:
-		break;
-	}
-}
-
-void	buttonDownSyringe1(ButtonsMode mode) {
-	switch(mode) {
-	case CLICK:
-		break;
-	case LONG_CLICK:
-		break;
-	case DEFAULT:
-		break;
-	}
-}
-
-void	buttonUpSyringe2(ButtonsMode mode) {
-	switch(mode) {
-	case CLICK:
-		break;
-	case LONG_CLICK:
-		break;
-	case DEFAULT:
-		break;
-	}
-}
-
-void	buttonDownSyringe2(ButtonsMode mode) {
-	switch(mode) {
-	case CLICK:
-		break;
-	case LONG_CLICK:
-		break;
-	case DEFAULT:
-		break;
-	}
 }
 
 CoverState	getStateCoverSyringe1() {
@@ -374,36 +346,6 @@ void	syringe2en(bool state) {
 	}
 }
 
-void	syringe1Handler() {
-	if (syringe1.param.dose != 0) {
-		if (syringe1.encoder.cnt == syringe1.param.dose) {
-			syringe1.param.dose = 0;
-			syringe1.en(false);
-		}
-	}
-	else if (syringe1.speed.dose != 0) {
-		if (syringe1.encoder.cnt == syringe1.speed.dose) {
-			syringe1.speed.dose = 0;
-			syringe1.en(false);
-		}
-	}
-}
-
-void	syringe2Handler() {
-	if (syringe2.param.dose != 0) {
-		if (syringe2.encoder.cnt == syringe2.param.dose) {
-			syringe2.param.dose = 0;
-			syringe2.en(false);
-		}
-	}
-	else if (syringe2.speed.dose != 0) {
-		if (syringe2.encoder.cnt == syringe2.speed.dose) {
-			syringe2.speed.dose = 0;
-			syringe2.en(false);
-		}
-	}
-}
-
 void	syringe1Timer() {
 	// Syringe 1
 	if (syringe1.param.en) {
@@ -412,14 +354,37 @@ void	syringe1Timer() {
 			syringe1.encoder.timer = 0;
 			syringe1.encoder.timOld = syringe1.encoder.timCurrent;
 			syringe1.encoder.timCurrent = TIM2->CNT;
-			//syringe1.encoder.delta = syringe1.encoder.timCurrent - syringe1.encoder.timOld;
-			syringe1.encoder.cnt = syringe1.encoder.cnt + syringe1.encoder.timCurrent - syringe1.encoder.timOld;
-			//syringe1.encoder.cnt += (syringe1.encoder.timCurrent - syringe1.encoder.timOld);
+			if (syringe1.motor.rotation == UNCLOCKWISE) {
+				syringe1.encoder.delta = syringe1.encoder.timOld - syringe1.encoder.timCurrent;
+				syringe1.encoder.cnt = syringe1.encoder.cnt - syringe1.encoder.delta;
+			}
+			else if (syringe1.motor.rotation == CLOCKWISE) {
+				syringe1.encoder.delta = syringe1.encoder.timCurrent - syringe1.encoder.timOld;
+				syringe1.encoder.cnt = syringe1.encoder.cnt + syringe1.encoder.delta;
+			}
 			syringe1.param.volume = syringe1.encoder.cnt / DOSE_O_1ML;
 		}
+	}
+	if (syringe1.speed.speed != 0 && syringe1.cover.getState() == CLOSE) {
 		syringe1.speed.timer++;
 		if (syringe1.speed.timer == syringe1.speed.PERIOD) {
 			syringe1.speed.timer = 0;
+			syringe1.setDose(1);
+			syringe1en(true);
+		}
+	}
+	if (syringe1.param.dose != 0) {
+		if (syringe1.encoder.cnt <= syringe1.encoder.targetCnt && syringe1.motor.rotation == UNCLOCKWISE) {
+			syringe1.param.dose = 0;
+			syringe1.motor.setPWM(0);
+			syringe1.motor.setRotation(BREAK);
+			syringe1.en(false);
+		}
+		else if (syringe1.encoder.cnt >= syringe1.encoder.targetCnt && syringe1.motor.rotation == CLOCKWISE) {
+			syringe1.param.dose = 0;
+			syringe1.motor.setPWM(0);
+			syringe1.motor.setRotation(BREAK);
+			syringe1.en(false);
 		}
 	}
 	// Hall sensor
@@ -433,7 +398,6 @@ void	syringe1Timer() {
 		syringe1.cover.hallSensor.timer_1++;
 		if (syringe1.cover.hallSensor.timer_1 >= syringe1.cover.hallSensor.delay) {
 			syringe1.cover.hallSensor.timer_1 = 0;
-			syringe1.en(false);
 			syringe1.cover.state = OPEN;
 		}
 	}
@@ -456,6 +420,10 @@ void	syringe1Timer() {
 		if (syringe1.startSensor.timer_1 == syringe1.startSensor.delay) {
 			syringe1.param.volume = MAX_VOLUME;
 			syringe1.param.position = START;
+			TIM2->CNT = 0;
+			syringe1.encoder.timCurrent = 0;
+			syringe1.encoder.timOld = 0;
+			syringe1.encoder.delta = 0;
 			if (syringe1.param.direction == PULL) {
 				syringe1.en(false);
 			}
@@ -482,6 +450,12 @@ void	syringe1Timer() {
 		if (syringe1.endSensor.timer_1 == syringe1.endSensor.delay) {
 			syringe1.param.volume = 0;
 			syringe1.param.position = END;
+			TIM2->CNT = 0;
+			syringe1.encoder.timCurrent = 0;
+			syringe1.encoder.timOld = 0;
+			syringe1.encoder.delta = 0;
+			syringe1.encoder.cnt = 0;
+			syringe1.setSpeed(0);
 			if (syringe1.param.direction == PUSH) {
 				syringe1.en(false);
 			}
@@ -496,16 +470,87 @@ void	syringe1Timer() {
 			syringe1.endSensor.timer_2 = 0;
 		}
 	}
+	// Button UP
+	if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == Bit_SET) {
+		syringe1.buttonUp.status = PRESSED;
+	}
+	else if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == Bit_RESET && syringe1.buttonUp.status == PRESSED) {
+		syringe1.buttonUp.status = RELEASED;
+	}
+	if (syringe1.buttonUp.status == PRESSED) {
+		syringe1.buttonUp.timer_1++;
+		if (syringe1.buttonUp.timer_1 == syringe1.buttonUp.delayLongClick) {
+			syringe1.buttonUp.mode = LONG_CLICK;
+		}
+	}
+	else if (syringe1.buttonUp.status == RELEASED) {
+		if (syringe1.buttonUp.timer_1 >= syringe1.buttonUp.delayLongClick) {
+			syringe1.buttonUp.timer_1 = 0;
+			syringe1.buttonUp.mode = DEFAULT;
+			syringe1.buttonUp.status = NO_EVENT;
+			syringe1.motor.setRotation(BREAK);
+			syringe1.motor.setPWM(0);
+			syringe1.en(false);
+		}
+		else {
+			syringe1.buttonUp.timer_2++;
+			if (syringe1.buttonUp.timer_2 >= syringe1.buttonUp.delayClick && syringe1.buttonUp.timer_2 < syringe1.buttonUp.delayLongClick) {
+				syringe1.buttonUp.mode = CLICK;
+				syringe1.buttonUp.status = NO_EVENT;
+				syringe1.buttonUp.timer_1 = 0;
+				syringe1.buttonUp.timer_2 = 0;
+			}
+		}
+	}
+	// Button Down
+	if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_2) == Bit_SET) {
+		syringe1.buttonDown.status = PRESSED;
+	}
+	else if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_2) == Bit_RESET && syringe1.buttonDown.status == PRESSED) {
+		syringe1.buttonDown.status = RELEASED;
+	}
+	if (syringe1.buttonDown.status == PRESSED) {
+		syringe1.buttonDown.timer_1++;
+		if (syringe1.buttonDown.timer_1 == syringe1.buttonDown.delayLongClick) {
+			syringe1.buttonDown.mode = LONG_CLICK;
+		}
+	}
+	else if (syringe1.buttonDown.status == RELEASED) {
+		if (syringe1.buttonDown.timer_1 >= syringe1.buttonDown.delayLongClick) {
+			syringe1.buttonDown.timer_1 = 0;
+			syringe1.buttonDown.mode = DEFAULT;
+			syringe1.buttonDown.status = NO_EVENT;
+			syringe1.motor.setRotation(BREAK);
+			syringe1.motor.setPWM(0);
+			syringe1.en(false);
+		}
+		else {
+			syringe1.buttonDown.timer_2++;
+			if (syringe1.buttonDown.timer_2 >= syringe1.buttonDown.delayClick && syringe1.buttonDown.timer_2 < syringe1.buttonDown.delayLongClick) {
+				syringe1.buttonDown.mode = CLICK;
+				syringe1.buttonDown.status = NO_EVENT;
+				syringe1.buttonDown.timer_1 = 0;
+				syringe1.buttonDown.timer_2 = 0;
+			}
+		}
+	}
 }
 
-void	syringe2Timer() {
+void 	syringe2Timer() {
 	if (syringe2.param.en) {
 		syringe2.encoder.timer++;
 		if (syringe2.encoder.timer == syringe2.encoder.PERIOD) {
 			syringe2.encoder.timer = 0;
 			syringe2.encoder.timOld = syringe2.encoder.timCurrent;
 			syringe2.encoder.timCurrent = TIM3->CNT;
-			syringe2.encoder.cnt += syringe2.encoder.timCurrent - syringe2.encoder.timOld;
+			if (syringe1.motor.rotation == UNCLOCKWISE) {
+				syringe1.encoder.delta = syringe1.encoder.timOld - syringe1.encoder.timCurrent;
+				syringe1.encoder.cnt = syringe1.encoder.cnt - syringe1.encoder.delta;
+			}
+			else if (syringe1.motor.rotation == CLOCKWISE) {
+				syringe1.encoder.delta = syringe1.encoder.timCurrent - syringe1.encoder.timOld;
+				syringe1.encoder.cnt = syringe1.encoder.cnt + syringe1.encoder.delta;
+			}
 			syringe2.param.volume = syringe2.encoder.cnt / DOSE_O_1ML;
 		}
 		syringe2.speed.timer++;
@@ -589,3 +634,52 @@ void	syringe2Timer() {
 	}
 }
 
+void	 syringe1Handler() {
+	if (syringe1.buttonUp.mode == LONG_CLICK) {
+		if (syringe1.startSensor.status != PRESSED && syringe1.cover.getState() == OPEN) {
+			syringe1.motor.setRotation(CLOCKWISE);
+			syringe1.motor.setPWM(100);
+			syringe1.en(true);
+		}
+	}
+	if (syringe1.cover.getState() == CLOSE && syringe1.buttonUp.mode == LONG_CLICK) {
+		syringe1.buttonUp.mode = DEFAULT;
+		syringe1.motor.setRotation(BREAK);
+		syringe1.motor.setPWM(0);
+		syringe1.en(false);
+	}
+	if (syringe1.buttonDown.mode == LONG_CLICK) {
+		if (syringe1.endSensor.status != PRESSED && syringe1.cover.getState() == OPEN) {
+			syringe1.motor.setRotation(UNCLOCKWISE);
+			syringe1.motor.setPWM(100);
+			syringe1.en(true);
+		}
+	}
+	if (syringe1.cover.getState() == CLOSE && syringe1.buttonDown.mode == LONG_CLICK) {
+		syringe1.buttonDown.mode = DEFAULT;
+		syringe1.motor.setRotation(BREAK);
+		syringe1.motor.setPWM(0);
+		syringe1.en(false);
+	}
+	if (syringe1.buttonUp.mode == CLICK) {
+		syringe1.buttonUp.mode = DEFAULT;
+		if (syringe1.startSensor.status != PRESSED && syringe1.cover.getState() == OPEN) {
+			syringe1.param.dose = 1;
+			syringe1.encoder.targetCnt = syringe1.encoder.cnt + DOSE_O_1ML;
+			syringe1.motor.setPWM(100);
+			syringe1.motor.setRotation(CLOCKWISE);
+			syringe1.en(true);
+		}
+	}
+	if (syringe1.buttonDown.mode == CLICK) {
+		syringe1.buttonDown.mode = DEFAULT;
+		if (syringe1.endSensor.status != PRESSED && syringe1.cover.getState() == OPEN) {
+			syringe1.setDose(1);
+			syringe1.motor.setPWM(100);
+			syringe1.en(true);
+		}
+	}
+}
+
+void	 syringe2Handler() {
+}

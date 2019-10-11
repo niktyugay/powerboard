@@ -6,6 +6,9 @@
  */
 
 #include "spi.h"
+#include "syringe.h"
+
+extern Syringe syringe1;
 
 uint8_t aRxBuffer[10];
 uint8_t ubRxIndex = 0;
@@ -113,6 +116,9 @@ void SPI1_IRQHandler() {
 			case DOS1_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+					if (syringe1.cover.getState() == CLOSE) {
+						syringe1.en(true);
+					}
 				}
 				break;
 			case DOS2_EN:
@@ -127,6 +133,7 @@ void SPI1_IRQHandler() {
 			case DOS1_SINGLE_DOSE | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+					syringe1.setDose(aRxBuffer[1]);
 				}
 				break;
 			case DOS2_SINGLE_DOSE:
@@ -141,6 +148,7 @@ void SPI1_IRQHandler() {
 			case DOS1_SPEED | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+					syringe1.setSpeed(aRxBuffer[1]);
 				}
 				break;
 			case DOS2_SPEED:

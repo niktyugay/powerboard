@@ -9,9 +9,11 @@
 #include "stm32f10x.h"
 #include "stm32f10x_tim.h"
 #include "stdbool.h"
-#define DOSE_O_1ML			1000
+#define DOSE_O_1ML			3972
 #define PERIOD_ENC			50
-#define MAX_VOLUME			20000
+#define MAX_VOLUME			200
+#define	MAX_ENCODER_CNT		794500
+#define	ONE_HOUR_MS			3600000
 typedef enum 	{
 	STOP,
 	PUSH,
@@ -70,6 +72,7 @@ typedef struct	{
 	uint8_t					timer;
 	uint8_t					PERIOD;
 	uint32_t				cnt;
+	uint32_t				targetCnt;
 	uint16_t				delta;
 	uint16_t				timOld;
 	uint16_t				timCurrent;
@@ -99,6 +102,7 @@ typedef struct	{
 	Encoder					encoder;
 	Cover					cover;
 	Sensors					startSensor, endSensor;
+	Buttons					buttonUp, buttonDown;
 	Speed					speed;
 	void					(*handler)(void);
 	void					(*timer)(void);
@@ -108,8 +112,6 @@ typedef struct	{
 	void					(*setSpeed)(uint16_t);
 	uint16_t				(*getSpeed)(void);
 	uint16_t				(*getVolume)(void);
-	void					(*buttonUp)(ButtonsMode);
-	void					(*buttonDown)(ButtonsMode);
 } Syringe;
 
 void 						initHardware(void);

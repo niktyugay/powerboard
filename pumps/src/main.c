@@ -15,7 +15,7 @@
 			
 uint32_t delay = 0;
 
-extern Syringe syringe1;
+extern Syringe syringe1, syringe2;
 
 void delay_ms(uint32_t value) {
 	delay = value;
@@ -25,6 +25,7 @@ void delay_ms(uint32_t value) {
 void SysTick_Handler(void) {
 	if (delay > 0) {delay--;}
 	syringe1.timer();
+	syringe2.timer();
 }
 
 int main(void)
@@ -36,8 +37,10 @@ int main(void)
 	initSyringes();
 
 	syringe1.encoder.cnt = MAX_ENCODER_CNT; // we don't know, but we assume
+	syringe2.encoder.cnt = MAX_ENCODER_CNT; // we don't know, but we assume
 
 	while(1) {
 		syringe1.handler();
+		syringe2.handler();
 	}
 }

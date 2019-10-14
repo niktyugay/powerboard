@@ -98,6 +98,7 @@ void SPI1_IRQHandler() {
 			case M2_ENC:
 				break;
 			case VALVE1:
+				ubRxIndex = 0;
 				break;
 			case VALVE1 | CMD_SET:
 				if (ubRxIndex == 2) {
@@ -105,6 +106,7 @@ void SPI1_IRQHandler() {
 				}
 				break;
 			case VALVE2:
+				ubRxIndex = 0;
 				break;
 			case VALVE2 | CMD_SET:
 				if (ubRxIndex == 2) {
@@ -112,7 +114,14 @@ void SPI1_IRQHandler() {
 				}
 				break;
 			case DOS1_EN:
-				break;
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				if (syringe1.param.en) {
+					SPI_I2S_SendData(SPI1, 0xFF);
+				}
+				else {
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
+ 				break;
 			case DOS1_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
@@ -122,13 +131,18 @@ void SPI1_IRQHandler() {
 				}
 				break;
 			case DOS2_EN:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				if (syringe2.param.en) {
+					SPI_I2S_SendData(SPI1, 0xFF);
+				}
+				else {
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
 				break;
 			case DOS2_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
 				}
-				break;
-			case DOS1_SINGLE_DOSE:
 				break;
 			case DOS1_SINGLE_DOSE | CMD_SET:
 				if (ubRxIndex == 2) {
@@ -136,14 +150,15 @@ void SPI1_IRQHandler() {
 					syringe1.setDose(aRxBuffer[1]);
 				}
 				break;
-			case DOS2_SINGLE_DOSE:
-				break;
 			case DOS2_SINGLE_DOSE | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+					syringe2.setDose(aRxBuffer[1]);
 				}
 				break;
 			case DOS1_SPEED:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, syringe1.speed.speed);
 				break;
 			case DOS1_SPEED | CMD_SET:
 				if (ubRxIndex == 2) {
@@ -152,10 +167,35 @@ void SPI1_IRQHandler() {
 				}
 				break;
 			case DOS2_SPEED:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, syringe2.speed.speed);
 				break;
 			case DOS2_SPEED | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+				}
+				break;
+			case DOS1_VOLUME:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, syringe1.getVolume);
+				break;
+			case DOS2_VOLUME:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, syringe2.getVolume);
+				break;
+			case DOS_COVERS:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				if (syringe1.cover.getState() == CLOSE && syringe2.cover.getState() == CLOSE) {
+					SPI_I2S_SendData(SPI1, 0x03);
+				}
+				else if (syringe1.cover.getState() == OPEN && syringe2.cover.getState() == CLOSE) {
+					SPI_I2S_SendData(SPI1, 0x01);
+				}
+				else if (syringe1.cover.getState() == CLOSE && syringe2.cover.getState() == OPEN) {
+					SPI_I2S_SendData(SPI1, 0x02);
+				}
+				else {
+					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
 		}

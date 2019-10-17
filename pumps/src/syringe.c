@@ -745,7 +745,7 @@ void	 syringe1Handler() {
 	if (syringe1.buttonUp.mode == LONG_CLICK) {
 		if (syringe1.startSensor.status != PRESSED && syringe1.cover.getState() == OPEN) {
 			syringe1.motor.setRotation(CLOCKWISE);
-			syringe1.motor.setPWM(100);
+			syringe1.motor.setPWM(90);
 			syringe1.en(true);
 		}
 	}
@@ -758,7 +758,7 @@ void	 syringe1Handler() {
 	if (syringe1.buttonDown.mode == LONG_CLICK) {
 		if (syringe1.endSensor.status != PRESSED && syringe1.cover.getState() == OPEN) {
 			syringe1.motor.setRotation(UNCLOCKWISE);
-			syringe1.motor.setPWM(100);
+			syringe1.motor.setPWM(90);
 			syringe1.en(true);
 		}
 	}
@@ -792,7 +792,7 @@ void	 syringe2Handler() {
 	if (syringe2.buttonUp.mode == LONG_CLICK) {
 		if (syringe2.startSensor.status != PRESSED && syringe2.cover.getState() == OPEN) {
 			syringe2.motor.setRotation(CLOCKWISE);
-			syringe2.motor.setPWM(100);
+			syringe2.motor.setPWM(90);
 			syringe2.en(true);
 		}
 	}
@@ -805,7 +805,7 @@ void	 syringe2Handler() {
 	if (syringe2.buttonDown.mode == LONG_CLICK) {
 		if (syringe2.endSensor.status != PRESSED && syringe2.cover.getState() == OPEN) {
 			syringe2.motor.setRotation(UNCLOCKWISE);
-			syringe2.motor.setPWM(100);
+			syringe2.motor.setPWM(90);
 			syringe2.en(true);
 		}
 	}

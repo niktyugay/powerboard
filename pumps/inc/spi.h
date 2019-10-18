@@ -13,6 +13,9 @@
 // HEAD
 #define CMD_SET								0x80
 
+// GENERAL cmd
+#define SELFTEST							0x14
+
 // CMD for peristaltic pumps
 #define M1_SPEED1							0x01
 #define M2_SPEED2							0x02

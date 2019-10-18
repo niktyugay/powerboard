@@ -7,6 +7,7 @@
 
 #include "spi.h"
 #include "syringe.h"
+#include "driver.h"
 
 extern Syringe syringe1, syringe2;
 
@@ -39,15 +40,15 @@ void SPI_Config() {
 	SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_RXNE, ENABLE);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_5;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	NVIC_EnableIRQ(SPI1_IRQn);
 	SPI_Cmd(SPI1, ENABLE);
@@ -57,6 +58,18 @@ void SPI1_IRQHandler() {
 	if (SPI_I2S_GetITStatus(SPI1, SPI_I2S_IT_RXNE) == SET) {
 		aRxBuffer[ubRxIndex++] = SPI_I2S_ReceiveData(SPI1);
 		switch(aRxBuffer[0]) {
+			case SELFTEST:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, 0x01);
+				ubRxIndex = 0;
+				break;
+			case SELFTEST | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
+				break;
 			case M1_SPEED1:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 				SPI_I2S_SendData(SPI1, 0x55);
@@ -121,18 +134,18 @@ void SPI1_IRQHandler() {
 				break;
 			case M1_ENC:
 				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
-				SPI_I2S_SendData(SPI1, 0xFF);
+				SPI_I2S_SendData(SPI1, 0x55);
 				ubRxIndex = 0;
 				break;
 			case M2_ENC:
 				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
-				SPI_I2S_SendData(SPI1, 0xFF);
+				SPI_I2S_SendData(SPI1, 0x96);
 				ubRxIndex = 0;
 				break;
 			case VALVE1:
 				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
 				if (flagValve1) {
-					SPI_I2S_SendData(SPI1, 0xFF);
+					SPI_I2S_SendData(SPI1, 0x11);
 				}
 				else {
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -155,7 +168,7 @@ void SPI1_IRQHandler() {
 			case VALVE2:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 				if (flagValve2) {
-					SPI_I2S_SendData(SPI1, 0xFF);
+					SPI_I2S_SendData(SPI1, 0x11);
 				}
 				else {
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -178,7 +191,7 @@ void SPI1_IRQHandler() {
 			case DOS1_EN:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 				if (syringe1.param.en) {
-					SPI_I2S_SendData(SPI1, 0xFF);
+					SPI_I2S_SendData(SPI1, 0x11);
 				}
 				else {
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -187,8 +200,11 @@ void SPI1_IRQHandler() {
 			case DOS1_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
-					if (syringe1.cover.getState() == CLOSE) {
+					if (syringe1.cover.getState() == CLOSE && aRxBuffer[1] == 0xFF) {
 						syringe1.en(true);
+					}
+					else {
+						syringe1.en(false);
 					}
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -197,7 +213,7 @@ void SPI1_IRQHandler() {
 			case DOS2_EN:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 				if (syringe2.param.en) {
-					SPI_I2S_SendData(SPI1, 0xFF);
+					SPI_I2S_SendData(SPI1, 0x11);
 				}
 				else {
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -206,8 +222,11 @@ void SPI1_IRQHandler() {
 			case DOS2_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
-					if (syringe2.cover.getState() == CLOSE) {
+					if (syringe2.cover.getState() == CLOSE && aRxBuffer[1] == 0xFF) {
 						syringe2.en(true);
+					}
+					else {
+						syringe2.en(false);
 					}
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);

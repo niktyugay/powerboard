@@ -2,6 +2,7 @@
 #define DRIVER_H_
 
 #include "stm32f10x.h"
+#include "Usart.h"
 
 extern void delay_ms(uint32_t);
 
@@ -32,7 +33,7 @@ typedef struct{
 #define SEND_DRIVER(USARTy,x) while(!(USARTy->SR & USART_SR_TC)){};USART_SendData((USARTy), (x)) 
 #define READ_DRIVER(USARTy,data)	getNextUartByte(&(data),(USARTy))
 #define USART_IS_EMPTY(USARTy,b) isEmptyUart(&(b),(USARTy))
-#define DELAY_MS(x)	Delay(x)
+#define DELAY_MS(x)	delay_ms(x)
 
 
 //REGISTER MAPPING

@@ -9,6 +9,7 @@
 #define SPI_H_
 
 #include "stm32f10x.h"
+#include "driver.h"
 
 // HEAD
 #define CMD_SET								0x80
@@ -27,7 +28,7 @@
 #define M2_ENC								0x08
 
 // CMD for valves
-#define VALVE1								0x09
+#define VALVE1								0x19
 #define VALVE2								0x0A
 
 //	CMD for syringes

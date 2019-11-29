@@ -12,15 +12,13 @@
 #define maxChar 0xFF
 void initUart1(void);
 void initUart2(void);
+void initUart3(void);
 void SendSt(char* str_p,USART_TypeDef * US);
 void SendNum(float s);
 void SendNext(void);
-//void USART2_IRQHandler(void);
 void sendCommandSPI1(int j);
 void checkCommands(void);
 void SendNumInt(int s);
-//void USART1_IRQHandler(void);
-//void USART3_IRQHandler(void);
 void getNextUartByte(uint8_t *temp,USART_TypeDef* USARTx);
 void isEmptyUart(uint8_t *b,USART_TypeDef* USARTx);
 

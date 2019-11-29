@@ -146,7 +146,7 @@ uint32_t readTstep(Driver_str* Driver_Struct){
 }
 
 uint16_t getPWM_Freq(ClockSourceDriver clock,Driver_str* Driver_Struct){
-	if(clock==INTERNAL){
+	if(clock==0){
 		switch((Driver_Struct->PWMCONF_sr&PWM_FREQ_bm)>>PWM_FREQ_bp){
 			case(0):{return (uint16_t)23400;}
 			case(1):{return (uint16_t)35100;}

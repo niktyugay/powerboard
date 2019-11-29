@@ -15,17 +15,24 @@ uint8_t aRxBuffer[10];
 uint8_t ubRxIndex = 0;
 
 extern bool flagValve1, flagValve2;
+extern uint8_t speedM1, speedM2, directionM1, directionM2;
+extern bool flagM1, flagM2;
+extern bool flagChangeM1,flagChangeM2;
 
 void SPI_Config() {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	SPI_InitTypeDef  SPI_InitStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
+
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-	GPIO_PinRemapConfig(GPIO_Remap_SWJ_NoJTRST, ENABLE);
-	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
-	GPIO_PinRemapConfig(GPIO_Remap_SPI1, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_NoJTRST, ENABLE);
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+	GPIO_PinRemapConfig(GPIO_Remap_SPI1, ENABLE);
+
 	SPI_I2S_DeInit(SPI1);
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
@@ -37,19 +44,25 @@ void SPI_Config() {
 	SPI_InitStructure.SPI_CRCPolynomial = 7;
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Slave;
 	SPI_Init(SPI1, &SPI_InitStructure);
-	SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_RXNE, ENABLE);
+
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4; // MISO
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15; // CS
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_5;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_5; // SCLK | MOSI
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	SPI_I2S_ITConfig(SPI1, SPI_I2S_IT_RXNE, ENABLE);
+	NVIC_InitStructure.NVIC_IRQChannel = SPI1_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 	NVIC_EnableIRQ(SPI1_IRQn);
 	SPI_Cmd(SPI1, ENABLE);
 }
@@ -58,11 +71,8 @@ void SPI1_IRQHandler() {
 	if (SPI_I2S_GetITStatus(SPI1, SPI_I2S_IT_RXNE) == SET) {
 		aRxBuffer[ubRxIndex++] = SPI_I2S_ReceiveData(SPI1);
 		switch(aRxBuffer[0]) {
-			case SELFTEST:
-				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, 0x01);
-				ubRxIndex = 0;
-				break;
+
+			/*============================== SELF TEST =============================*/
 			case SELFTEST | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
@@ -70,77 +80,122 @@ void SPI1_IRQHandler() {
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
-			case M1_SPEED1:
+			case SELFTEST:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, 0x55);
+				SPI_I2S_SendData(SPI1, 0x01);
 				ubRxIndex = 0;
 				break;
+			/*======================================================================*/
+
+			/*=============================== MOTOR 1 ==============================*/
 			case M1_SPEED1 | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+					speedM1 = aRxBuffer[1];
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
-			case M2_SPEED2:
+			case M1_SPEED1:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, 0x55);
+				SPI_I2S_SendData(SPI1, speedM1);
 				ubRxIndex = 0;
 				break;
-			case M2_SPEED2 | CMD_SET:
+			case M1_DIRECTION | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
-					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-					SPI_I2S_SendData(SPI1, 0x00);
-				}
-				break;
-			case M1_EN | CMD_SET:
-				if (ubRxIndex == 2) {
-					ubRxIndex = 0;
-					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-					SPI_I2S_SendData(SPI1, 0x00);
-				}
-				break;
-			case M2_EN | CMD_SET:
-				if (ubRxIndex == 2) {
-					ubRxIndex = 0;
+					directionM1 = aRxBuffer[1];
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
 			case M1_DIRECTION:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, 0x55);
+				SPI_I2S_SendData(SPI1, directionM1);
 				ubRxIndex = 0;
 				break;
-			case M1_DIRECTION | CMD_SET:
+			case M1_ENC:
+				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
+				SPI_I2S_SendData(SPI1, speedM1);
+				ubRxIndex = 0;
+				break;
+			case M1_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+					flagChangeM1 = true;
+					if (aRxBuffer[1] > 0) {
+						flagM1 = true;
+					}
+					else {
+						flagM1 = false;
+					}
+					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
+				break;
+			/*======================================================================*/
+
+			/*=============================== MOTOR 2 ==============================*/
+			case M2_SPEED2 | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+					speedM2 = aRxBuffer[1];
+					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
+				break;
+			case M2_SPEED2:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, speedM2);
+				ubRxIndex = 0;
+				break;
+			case M2_ENC:
+				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
+				SPI_I2S_SendData(SPI1, speedM2);
+				ubRxIndex = 0;
+				break;
+			case M2_DIRECTION | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+					directionM2 = aRxBuffer[1];
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
 			case M2_DIRECTION:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, 0x55);
+				SPI_I2S_SendData(SPI1, directionM2);
 				ubRxIndex = 0;
 				break;
-			case M2_DIRECTION | CMD_SET:
+			case M2_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
+					flagChangeM2 = true;
+					if (aRxBuffer[1] > 0) {
+						flagM2 = true;
+					}
+					else {
+						flagM2 = false;
+					}
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
-			case M1_ENC:
-				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
-				SPI_I2S_SendData(SPI1, 0x55);
-				ubRxIndex = 0;
-				break;
-			case M2_ENC:
-				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
-				SPI_I2S_SendData(SPI1, 0x96);
-				ubRxIndex = 0;
+			/*======================================================================*/
+
+			/*=============================== VALVE 1 ==============================*/
+			case VALVE1 | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+					if (aRxBuffer[1] == 0xFF) {
+						flagValve1 = true;
+					}
+					else {
+						flagValve1 = false;
+					}
+					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
 				break;
 			case VALVE1:
 				while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) {}
@@ -152,14 +207,17 @@ void SPI1_IRQHandler() {
 				}
 				ubRxIndex = 0;
 				break;
-			case VALVE1 | CMD_SET:
+			/*======================================================================*/
+
+			/*=============================== VALVE 2 ==============================*/
+			case VALVE2 | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
 					if (aRxBuffer[1] == 0xFF) {
-						flagValve1 = true;
+						flagValve2 = true;
 					}
 					else {
-						flagValve1 = false;
+						flagValve2 = false;
 					}
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -175,14 +233,17 @@ void SPI1_IRQHandler() {
 				}
 				ubRxIndex = 0;
 				break;
-			case VALVE2 | CMD_SET:
+			/*======================================================================*/
+
+			/*================================ DOS 1 ===============================*/
+			case DOS1_EN | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
-					if (aRxBuffer[1] == 0xFF) {
-						flagValve2 = true;
+					if (syringe1.cover.getState() == CLOSE && aRxBuffer[1] == 0xFF) {
+						syringe1.en(true);
 					}
 					else {
-						flagValve2 = false;
+						syringe1.en(false);
 					}
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -197,14 +258,43 @@ void SPI1_IRQHandler() {
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
  				break;
-			case DOS1_EN | CMD_SET:
+			case DOS1_SINGLE_DOSE | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
-					if (syringe1.cover.getState() == CLOSE && aRxBuffer[1] == 0xFF) {
-						syringe1.en(true);
+					syringe1.setDose(aRxBuffer[1]);
+					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
+				break;
+			case DOS1_SPEED | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+					syringe1.setSpeed(aRxBuffer[1]);
+					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+					SPI_I2S_SendData(SPI1, 0x00);
+				}
+				break;
+			case DOS1_SPEED:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, syringe1.speed.speed);
+				ubRxIndex = 0;
+				break;
+			case DOS1_VOLUME:
+				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
+				SPI_I2S_SendData(SPI1, syringe1.getVolume());
+				ubRxIndex = 0;
+				break;
+ 			/*======================================================================*/
+
+ 			/*================================ DOS 2 ===============================*/
+			case DOS2_EN | CMD_SET:
+				if (ubRxIndex == 2) {
+					ubRxIndex = 0;
+					if (syringe2.cover.getState() == CLOSE && aRxBuffer[1] == 0xFF) {
+						syringe2.en(true);
 					}
 					else {
-						syringe1.en(false);
+						syringe2.en(false);
 					}
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
@@ -219,27 +309,6 @@ void SPI1_IRQHandler() {
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
-			case DOS2_EN | CMD_SET:
-				if (ubRxIndex == 2) {
-					ubRxIndex = 0;
-					if (syringe2.cover.getState() == CLOSE && aRxBuffer[1] == 0xFF) {
-						syringe2.en(true);
-					}
-					else {
-						syringe2.en(false);
-					}
-					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-					SPI_I2S_SendData(SPI1, 0x00);
-				}
-				break;
-			case DOS1_SINGLE_DOSE | CMD_SET:
-				if (ubRxIndex == 2) {
-					ubRxIndex = 0;
-					syringe1.setDose(aRxBuffer[1]);
-					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-					SPI_I2S_SendData(SPI1, 0x00);
-				}
-				break;
 			case DOS2_SINGLE_DOSE | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
@@ -248,15 +317,10 @@ void SPI1_IRQHandler() {
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
 				break;
-			case DOS1_SPEED:
-				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, syringe1.speed.speed);
-				ubRxIndex = 0;
-				break;
-			case DOS1_SPEED | CMD_SET:
+			case DOS2_SPEED | CMD_SET:
 				if (ubRxIndex == 2) {
 					ubRxIndex = 0;
-					syringe1.setSpeed(aRxBuffer[1]);
+					syringe2.setSpeed(aRxBuffer[1]);
 					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
@@ -266,32 +330,23 @@ void SPI1_IRQHandler() {
 				SPI_I2S_SendData(SPI1, syringe2.speed.speed);
 				ubRxIndex = 0;
 				break;
-			case DOS2_SPEED | CMD_SET:
-				if (ubRxIndex == 2) {
-					ubRxIndex = 0;
-					while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-					SPI_I2S_SendData(SPI1, 0x00);
-				}
-				break;
-			case DOS1_VOLUME:
-				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, syringe1.getVolume);
-				ubRxIndex = 0;
-				break;
 			case DOS2_VOLUME:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				SPI_I2S_SendData(SPI1, syringe2.getVolume);
+				SPI_I2S_SendData(SPI1, syringe2.getVolume());
 				ubRxIndex = 0;
 				break;
+			/*======================================================================*/
+
+			/*============================= DOS COMMON =============================*/
 			case DOS_COVERS:
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-				if (syringe1.cover.getState() == CLOSE && syringe2.cover.getState() == CLOSE) {
+				if ((syringe1.cover.state == CLOSE) && (syringe2.cover.state == CLOSE)) {
 					SPI_I2S_SendData(SPI1, 0x03);
 				}
-				else if (syringe1.cover.getState() == OPEN && syringe2.cover.getState() == CLOSE) {
+				else if ((syringe1.cover.state == OPEN) && (syringe2.cover.state == CLOSE)) {
 					SPI_I2S_SendData(SPI1, 0x01);
 				}
-				else if (syringe1.cover.getState() == CLOSE && syringe2.cover.getState() == OPEN) {
+				else if ((syringe1.cover.state == CLOSE) && (syringe2.cover.state == OPEN)) {
 					SPI_I2S_SendData(SPI1, 0x02);
 				}
 				else {
@@ -299,11 +354,14 @@ void SPI1_IRQHandler() {
 				}
 				ubRxIndex = 0;
 				break;
+			/*======================================================================*/
+
 			default :
 				ubRxIndex = 0;
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
 				SPI_I2S_SendData(SPI1, 0x00);
 				break;
+
 		}
 	}
 }

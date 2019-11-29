@@ -14,6 +14,9 @@
 #define MAX_VOLUME			200
 #define	MAX_ENCODER_CNT		794500
 #define	ONE_HOUR_MS			3600000
+#define	DELAY_CLICK			175
+#define	DELAY_LONGCLICK		1000
+#define	DELAY_SENSOR_CLICK	100
 typedef enum 	{
 	STOP,
 	PUSH,
@@ -44,8 +47,7 @@ typedef enum	{
 	PRESSED,
 	RELEASED
 }	ButtonStatus;
-#define	DELAY_CLICK			175
-#define	DELAY_LONGCLICK		1000
+
 typedef struct	{
 	uint32_t				timer_1;
 	uint32_t				timer_2;
@@ -54,7 +56,6 @@ typedef struct	{
 	uint16_t				delayClick;
 	uint16_t				delayLongClick;
 }	Buttons;
-#define	DELAY_SENSOR_CLICK	100
 typedef struct	{
 	uint32_t				timer_1;
 	uint32_t				timer_2;
@@ -109,9 +110,9 @@ typedef struct	{
 
 	void					(*en)(bool);
 	void					(*setDose)(uint16_t);
-	void					(*setSpeed)(uint16_t);
-	uint16_t				(*getSpeed)(void);
-	uint16_t				(*getVolume)(void);
+	void					(*setSpeed)(uint8_t);
+	uint8_t 				(*getSpeed)(void);
+	uint8_t					(*getVolume)(void);
 } Syringe;
 
 void 						initHardware(void);
@@ -126,12 +127,12 @@ void						syringe1en(bool state);
 void						syringe2en(bool state);
 void 						setDoseSyringe1(uint16_t value);
 void 						setDoseSyringe2(uint16_t value);
-void 						setSpeedSyringe1(uint16_t volume);
-uint16_t					getSpeedSyringe1(void);
-void 						setSpeedSyringe2(uint16_t volume);
-uint16_t					getSpeedSyringe2(void);
-uint16_t					getVolumeSyringe1(void);
-uint16_t					getVolumeSyringe2(void);
+void 						setSpeedSyringe1(uint8_t volume);
+uint8_t						getSpeedSyringe1(void);
+void 						setSpeedSyringe2(uint8_t volume);
+uint8_t						getSpeedSyringe2(void);
+uint8_t						getVolumeSyringe1(void);
+uint8_t						getVolumeSyringe2(void);
 void						buttonUpSyringe1(ButtonsMode);
 void						buttonDownSyringe1(ButtonsMode);
 void						buttonUpSyringe2(ButtonsMode);

@@ -16,16 +16,17 @@ volatile char singleCommand[50];
 void initUart1() {
 	GPIO_InitTypeDef gpio_struct;
 	USART_InitTypeDef	usart_struct;
+	NVIC_InitTypeDef NVIC_InitStructure;
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 	gpio_struct.GPIO_Mode = GPIO_Mode_AF_PP;
 	gpio_struct.GPIO_Pin = GPIO_Pin_9;
-	gpio_struct.GPIO_Speed = GPIO_Speed_2MHz;
+	gpio_struct.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &gpio_struct);
 	gpio_struct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	gpio_struct.GPIO_Pin = GPIO_Pin_10;
-	gpio_struct.GPIO_Speed = GPIO_Speed_2MHz;
+	gpio_struct.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &gpio_struct);
 	usart_struct.USART_BaudRate = 115200;
 	usart_struct.USART_WordLength = USART_WordLength_8b;
@@ -35,6 +36,10 @@ void initUart1() {
 	usart_struct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
 	USART_Init(USART1, &usart_struct);
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 	NVIC_EnableIRQ(USART1_IRQn);
 	USART_Cmd(USART1, ENABLE);
 }
@@ -65,6 +70,37 @@ void initUart2() {
 	USART_Cmd(USART2, ENABLE);
 }
 
+void initUart3() {
+	GPIO_InitTypeDef gpio_struct;
+	USART_InitTypeDef	usart_struct;
+	NVIC_InitTypeDef NVIC_InitStructure;
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+	gpio_struct.GPIO_Mode = GPIO_Mode_AF_PP;
+	gpio_struct.GPIO_Pin = GPIO_Pin_10;
+	gpio_struct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &gpio_struct);
+	gpio_struct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	gpio_struct.GPIO_Pin = GPIO_Pin_11;
+	gpio_struct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &gpio_struct);
+	usart_struct.USART_BaudRate = 115200;
+	usart_struct.USART_WordLength = USART_WordLength_8b;
+	usart_struct.USART_StopBits = USART_StopBits_1;
+	usart_struct.USART_Parity = USART_Parity_No;
+	usart_struct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	usart_struct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
+	USART_Init(USART3, &usart_struct);
+	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+	NVIC_EnableIRQ(USART3_IRQn);
+	USART_Cmd(USART3, ENABLE);
+}
+
 void SendSt(char* str_p,USART_TypeDef * US)
 {
 		uint16_t i=0;
@@ -77,20 +113,10 @@ void SendSt(char* str_p,USART_TypeDef * US)
 		}
 }
 void USART2_IRQHandler(void){
-	 
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
-   {
+	{
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
-		//USART_SendData(USART1,USART_ReceiveData (USART1));
-		commandsFromUART3[currentPositionUARTinInterrupt3]=USART_ReceiveData(USART2);
-		//countCommandsFromUART++;
-		if((currentPositionUARTinInterrupt3+2>LENGTH_DATA_ARRAY)){
-			currentPositionUARTinInterrupt3=0;}
-		else{
-			currentPositionUARTinInterrupt3++;
-		}
 	}
-	
 }
 void checkCommands(void){
 	if(countCommandsFromUART>0){
@@ -129,83 +155,69 @@ void sendCommandSPI1(int j){
 	*/
 }
 
-
-void USART1_IRQHandler(void){
-	 
-	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
-   {
+void USART1_IRQHandler(void) {
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
-		//USART_SendData(USART1,USART_ReceiveData (USART1));
 		commandsFromUART[currentPositionUARTinInterrupt]=USART_ReceiveData(USART1);
-		//countCommandsFromUART++;
-		if((currentPositionUARTinInterrupt+2>LENGTH_DATA_ARRAY)){
+		if ((currentPositionUARTinInterrupt+2>LENGTH_DATA_ARRAY)) {
 			currentPositionUARTinInterrupt=0;}
-		else{
+		else {
 			currentPositionUARTinInterrupt++;
 		}
 	}
-	
 }
 
-void getNextUartByte(uint8_t *temp,USART_TypeDef* USARTx){
+void getNextUartByte(uint8_t *temp,USART_TypeDef* USARTx) {
 	if(USARTx==USART1){
-		if(currentPositionUART!=currentPositionUARTinInterrupt){
+		if(currentPositionUART!=currentPositionUARTinInterrupt) {
 			*temp = commandsFromUART[currentPositionUART];
-			
-			if(currentPositionUART+2>LENGTH_DATA_ARRAY){
+			if (currentPositionUART+2>LENGTH_DATA_ARRAY) {
 				currentPositionUART = 0;
-			}else{
+			}
+			else {
 				currentPositionUART++;
 			}
 		}
-	}else
-		{
-			if(currentPositionUART3!=currentPositionUARTinInterrupt3){
-				*temp = commandsFromUART3[currentPositionUART3];
-				
-				if(currentPositionUART3+2>LENGTH_DATA_ARRAY){
-					currentPositionUART3 = 0;
-				}else{
-					currentPositionUART3++;
-				}
+	}
+	else {
+		if(currentPositionUART3!=currentPositionUARTinInterrupt3) {
+			*temp = commandsFromUART3[currentPositionUART3];
+			if (currentPositionUART3+2>LENGTH_DATA_ARRAY) {
+				currentPositionUART3 = 0;
+			}
+			else {
+				currentPositionUART3++;
 			}
 		}
+	}
 }
 
 void isEmptyUart(uint8_t *b,USART_TypeDef* USARTx){
-	if(USARTx==USART1){
-		if(currentPositionUART==currentPositionUARTinInterrupt){
+	if(USARTx==USART1) {
+		if (currentPositionUART==currentPositionUARTinInterrupt) {
 			*b=1;
-		}else
-		{
+		}
+		else {
 			*b=0;
 		}
-}else
-	{
+	}
+	else {
 		if(currentPositionUART3==currentPositionUARTinInterrupt3){
 			*b=1;
-		}else
-		{
+		}
+		else {
 			*b=0;
 		}
 	}
 }
-
 void USART3_IRQHandler(void){
-
-	if(USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)
-   {
+	if(USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)	{
 		USART_ClearITPendingBit(USART3, USART_IT_RXNE);
-		/*
-		//USART_SendData(USART1,USART_ReceiveData (USART1));
 		commandsFromUART3[currentPositionUARTinInterrupt3]=USART_ReceiveData(USART3);
-		//countCommandsFromUART++;
-		if((currentPositionUARTinInterrupt3+2>LENGTH_DATA_ARRAY)){
+		if	((currentPositionUARTinInterrupt3+2>LENGTH_DATA_ARRAY))	{
 			currentPositionUARTinInterrupt3=0;}
-		else{
+		else	{
 			currentPositionUARTinInterrupt3++;
 		}
-		*/
 	}
-
 }

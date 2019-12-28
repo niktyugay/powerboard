@@ -23,7 +23,9 @@ uint32_t delay = 0;
 uint32_t cnttest = 0;
 
 extern Syringe syringe1, syringe2;
-uint8_t speedM1, speedM2, directionM1, directionM2;
+uint8_t speedM1, currentSpeedM1, speedM2, currentSpeedM2, directionM1, directionM2;
+uint16_t delayM1 = 0;
+uint16_t delayM2 = 0;
 bool flagChangeM1 = false;
 bool flagChangeM2 = false;
 bool flagChangeM1M2 = false;
@@ -43,6 +45,11 @@ void initValves(void);
 void initDriverEn(void);
 void GPIO_Config(void);
 
+bool	flagSoftStartMotor1 = false;
+bool	flagSoftStartMotor2 = false;
+void	softStartMotor1(uint8_t speed);
+void	softStartMotor2(uint8_t speed);
+
 void delay_ms(uint32_t value) {
 	delay = value;
 	while(delay) {}
@@ -50,10 +57,16 @@ void delay_ms(uint32_t value) {
 
 void SysTick_Handler(void) {
 	if (delay > 0) {delay--;}
+	/*==================== SYRINGES =================*/
 	if (periphState) {
-		syringe1.timer();
-		syringe2.timer();
+		syringe1.handlerTimer();
+		syringe2.handlerTimer();
 	}
+	/*===============================================*/
+	/*===================== MOTORS ==================*/
+	if (delayM1 > 0) {delayM1--;}
+	if (delayM2 > 0) {delayM2--;}
+	/*===============================================*/
 }
 
 int main(void)
@@ -74,8 +87,8 @@ int main(void)
 	delay_ms(10);
 	initUart3(); // верхний драйвер и PC9
 	periphState = true;
-	syringe1.encoder.cnt = MAX_ENCODER_CNT;
-	syringe2.encoder.cnt = MAX_ENCODER_CNT;
+	syringe1.encoder.cnt = 0;
+	syringe2.encoder.cnt = 0;
 	delay_ms(10);
 	SPI_Config();
 
@@ -83,11 +96,13 @@ int main(void)
 	statusDriver1 = initDriver(&driver1);
 	setDirection(0, &driver1);
 	setSpeed(0,&driver1);
+	currentSpeedM1 = 0;
 
 	Driver_StructInit(&driver2, USART1);
 	statusDriver2 = initDriver(&driver2);
 	setDirection(0,&driver2);
 	setSpeed(0, &driver2);
+	currentSpeedM2 = 0;
 
 #ifdef TEST_MOTOR_1
 	delay_ms(100);
@@ -143,8 +158,8 @@ int main(void)
 	while(1) {
 
 		/*==================== SYRINGES =================*/
-		syringe1.handler();
-		syringe2.handler();
+		syringe1.handlerMain();
+		syringe2.handlerMain();
 		/*===============================================*/
 
 		/*===================== VALVES ==================*/
@@ -167,11 +182,18 @@ int main(void)
 			flagChangeM1 = false;
 			if (flagM1) {
 				setDirection(directionM1,&driver1); // usart 3
-				setSpeed(speedM1,&driver1);
+				if (speedM1 > currentSpeedM1) {
+					flagSoftStartMotor1 = true;
+				}
+				else {
+					setSpeed(speedM1,&driver1);
+					currentSpeedM1 = speedM1;
+				}
 				GPIO_ResetBits(GPIOC, GPIO_Pin_9);
 			}
 			else {
 				setSpeed(0,&driver1);
+				currentSpeedM1 = 0;
 				GPIO_SetBits(GPIOC, GPIO_Pin_9);
 			}
 		}
@@ -179,12 +201,57 @@ int main(void)
 			flagChangeM2 = false;
 			if (flagM2) {
 				setDirection(directionM2,&driver2); // usart 1
-				setSpeed(speedM2,&driver2);
+				if (speedM2 > currentSpeedM2) {
+					flagSoftStartMotor2 = true;
+				}
+				else {
+					setSpeed(speedM2,&driver2);
+					currentSpeedM2 = speedM2;
+				}
 				GPIO_ResetBits(GPIOC, GPIO_Pin_8);
 			}
 			else {
 				setSpeed(0,&driver2);
+				currentSpeedM2 = 0;
 				GPIO_SetBits(GPIOC, GPIO_Pin_8);
+			}
+		}
+		if (flagSoftStartMotor1) {
+			if (delayM1 == 0) {
+				if (currentSpeedM1 < speedM1) {
+					currentSpeedM1 = currentSpeedM1 + 2;
+					setSpeed(currentSpeedM1,&driver1);
+					if (currentSpeedM1 <= 10) {
+						delayM1 = 3000;
+					}
+					else if (currentSpeedM1 > 10) {
+						delayM1 = 500;
+					}
+				}
+				else {
+					currentSpeedM1 = speedM1;
+					setSpeed(currentSpeedM1,&driver1);
+					flagSoftStartMotor1 = false;
+				}
+			}
+		}
+		if (flagSoftStartMotor2) {
+			if (delayM2 == 0) {
+				if (currentSpeedM2 < speedM2) {
+					currentSpeedM2 = currentSpeedM2 + 2;
+					setSpeed(currentSpeedM2,&driver2);
+					if (currentSpeedM2 <= 10) {
+						delayM2 = 3000;
+					}
+					else if (currentSpeedM2 > 10) {
+						delayM2 = 500;
+					}
+				}
+				else {
+					currentSpeedM2 = speedM2;
+					setSpeed(currentSpeedM2,&driver2);
+					flagSoftStartMotor2 = false;
+				}
 			}
 		}
 		/*===============================================*/

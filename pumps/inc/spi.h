@@ -43,5 +43,6 @@
 #define DOS_COVERS							0x13
 
 void SPI_Config(void);
+uint8_t send_get_data(uint8_t);
 
 #endif /* SPI_H_ */

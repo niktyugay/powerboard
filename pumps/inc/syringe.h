@@ -9,21 +9,22 @@
 #include "stm32f10x.h"
 #include "stm32f10x_tim.h"
 #include "stdbool.h"
-#define DOSE_O_1ML			3972
+#define DOSE_O_1ML			3697
 #define PERIOD_ENC			50
 #define MAX_VOLUME			200
 #define	MAX_ENCODER_CNT		794500
 #define	ONE_HOUR_MS			3600000
+#define COUNT_OF_PERIOD		5
 #define	DELAY_CLICK			175
 #define	DELAY_LONGCLICK		1000
 #define	DELAY_SENSOR_CLICK	100
+
 typedef enum 	{
 	STOP,
 	PUSH,
 	PULL,
 } 	Direction;
 typedef enum	{
-	BREAK,
 	CLOCKWISE,
 	UNCLOCKWISE
 }	Rotation;
@@ -70,48 +71,39 @@ typedef struct	{
 	void					(*setRotation)(Rotation);
 } Motor;
 typedef struct	{
-	uint8_t					timer;
-	uint8_t					PERIOD;
 	uint32_t				cnt;
-	uint32_t				targetCnt;
-	uint16_t				delta;
-	uint16_t				timOld;
-	uint16_t				timCurrent;
 } Encoder;
 typedef struct	{
 	Sensors					hallSensor;
 	CoverState				state;
-	CoverState				(*getState)(void);
-	void					(*handler)(void);
 } Cover;
 typedef struct	{
-	uint32_t				timer;
-	uint32_t 				PERIOD;
-	uint16_t				speed;
-	uint16_t				dose;
-} Speed;
-typedef struct	{
 	bool 					en;
-	uint16_t				volume;
+	uint8_t					volume;
 	uint16_t				dose;
 	Direction				direction;
 	Position				position;
 } Syringe_varibles;
 typedef struct	{
-	Syringe_varibles 		param;
+	bool 					en;
+	uint8_t					volume;
+	uint16_t				dose;
+	uint8_t					speed;
+
+	uint32_t				timer;
+
 	Motor					motor;
 	Encoder					encoder;
 	Cover					cover;
 	Sensors					startSensor, endSensor;
 	Buttons					buttonUp, buttonDown;
-	Speed					speed;
-	void					(*handler)(void);
-	void					(*timer)(void);
 
-	void					(*en)(bool);
+	void					(*handlerMain)(void);
+	void					(*handlerTimer)(void);
+
+	void					(*start)(void);
+	void					(*stop)(void);
 	void					(*setDose)(uint16_t);
-	void					(*setSpeed)(uint8_t);
-	uint8_t 				(*getSpeed)(void);
 	uint8_t					(*getVolume)(void);
 } Syringe;
 
@@ -123,16 +115,14 @@ void						syringe2Handler(void);
 void						syringe1Timer(void);
 void						syringe2Timer(void);
 
-void						syringe1en(bool state);
-void						syringe2en(bool state);
+void						syringe1Start(void);
+void						syringe1Stop(void);
 void 						setDoseSyringe1(uint16_t value);
+
+void						syringe2Start(void);
+void						syringe2Stop(void);
 void 						setDoseSyringe2(uint16_t value);
-void 						setSpeedSyringe1(uint8_t volume);
-uint8_t						getSpeedSyringe1(void);
-void 						setSpeedSyringe2(uint8_t volume);
-uint8_t						getSpeedSyringe2(void);
-uint8_t						getVolumeSyringe1(void);
-uint8_t						getVolumeSyringe2(void);
+
 void						buttonUpSyringe1(ButtonsMode);
 void						buttonDownSyringe1(ButtonsMode);
 void						buttonUpSyringe2(ButtonsMode);
@@ -144,6 +134,5 @@ void 						setPWMSyringe2(uint8_t dutyCycle);
 uint8_t						getPWMSyringe2(void);
 void						setRotationSyringe1(Rotation);
 void						setRotationSyringe2(Rotation);
-CoverState					getStateCoverSyringe1(void);
-CoverState					getStateCoverSyringe2(void);
+
 #endif /* SYRINGE_H_ */

@@ -18,6 +18,7 @@ extern bool flagValve1, flagValve2;
 extern uint8_t speedM1, speedM2, directionM1, directionM2;
 extern bool flagM1, flagM2;
 extern bool flagChangeM1,flagChangeM2;
+uint8_t statuDos = 0;
 
 uint8_t syringe1speed = 0;
 uint8_t syringe2speed = 0;
@@ -334,6 +335,21 @@ void SPI1_IRQHandler() {
 
 			/*============================= DOS COMMON =============================*/
 			case DOS_COVERS:
+				//syringe1.startSensor.status
+				if (syringe1.startSensor.status == PRESSED) {statuDos |= 0b00100000;}
+				else {statuDos &= 0b11011111;}
+				if (syringe2.startSensor.status == PRESSED) {statuDos |= 0b00010000;}
+				else {statuDos &= 0b11101111;}
+				if (syringe1.endSensor.status == PRESSED) {statuDos |= 0b00001000;}
+				else {statuDos &= 0b11110111;}
+				if (syringe2.endSensor.status == PRESSED) {statuDos |= 0b0000100;}
+				else {statuDos &= 0b11111011;}
+				if (syringe1.cover.state == OPEN) {statuDos |= 0b00000010;}
+				else {statuDos &= 0b11111101;}
+				if (syringe2.cover.state == OPEN) {statuDos |= 0b00000001;}
+				else {statuDos &= 0b11111110;}
+				SPI_I2S_SendData(SPI1, statuDos);
+				/*
 				if ((syringe1.cover.state == CLOSE) && (syringe2.cover.state == CLOSE)) {
 					SPI_I2S_SendData(SPI1, 0x00);
 				}
@@ -346,6 +362,7 @@ void SPI1_IRQHandler() {
 				else if ((syringe1.cover.state == OPEN) && (syringe2.cover.state == OPEN)){
 					SPI_I2S_SendData(SPI1, 0x11);
 				}
+				*/
 				ubRxIndex = 0;
 				break;
 			/*======================================================================*/

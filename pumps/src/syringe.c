@@ -102,10 +102,10 @@ void	initHardware() {
 void	initSyringes() {
 	initHardware();
 	syringe1.en =						false;
-	syringe1.volume = 					0;
+	syringe1.volume = 					100;
 	syringe1.dose = 					0;
 	syringe1.speed =					0;
-	syringe1.encoder.cnt = 				0;
+	syringe1.encoder.cnt = 				369700;
 	syringe1.motor.pwm = 				0;
 	syringe1.cover.state = 				CLOSE;
 	syringe1.cover.hallSensor.delay =	DELAY_SENSOR_CLICK;
@@ -139,10 +139,10 @@ void	initSyringes() {
 	syringe1.stop =						syringe1Stop;
 
 	syringe2.en =						false;
-	syringe2.volume = 					0;
+	syringe2.volume = 					100;
 	syringe2.dose = 					0;
 	syringe2.speed =					0;
-	syringe2.encoder.cnt = 				0;
+	syringe2.encoder.cnt = 				369700;
 	syringe2.motor.pwm = 				0;
 	syringe2.cover.state = 				CLOSE;
 	syringe2.cover.hallSensor.delay =	DELAY_SENSOR_CLICK;
@@ -302,17 +302,29 @@ void	syringe1Timer() {
 #ifdef VER1
 				if (syringe1.motor.rotation == UNCLOCKWISE) { // PULL
 					syringe1.encoder.cnt = syringe1.encoder.cnt + TIM2->CNT;
+					if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe1.encoder.cnt = MAX_ENCODER_CNT;
+					}
 				}
 				else if (syringe1.motor.rotation == CLOCKWISE) { // PUSH
 					syringe1.encoder.cnt = syringe1.encoder.cnt - TIM2->CNT;
+					if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe1.encoder.cnt = 0;
+					}
 				}
 #endif
 #ifdef VER2
 				if (syringe1.motor.rotation == UNCLOCKWISE) { // PUSH
 					syringe1.encoder.cnt = syringe1.encoder.cnt - TIM2->CNT;
+					if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe1.encoder.cnt = 0;
+					}
 				}
 				else if (syringe1.motor.rotation == CLOCKWISE) { // PULL
 					syringe1.encoder.cnt = syringe1.encoder.cnt + TIM2->CNT;
+					if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe1.encoder.cnt = MAX_ENCODER_CNT;
+					}
 				}
 #endif
 				TIM2->CNT = 0;
@@ -322,17 +334,29 @@ void	syringe1Timer() {
 #ifdef VER1
 			if (syringe1.motor.rotation == UNCLOCKWISE) { // PULL
 				syringe1.encoder.cnt = syringe1.encoder.cnt + TIM2->CNT;
+				if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe1.encoder.cnt = MAX_ENCODER_CNT;
+				}
 			}
 			else if (syringe1.motor.rotation == CLOCKWISE) { // PUSH
 				syringe1.encoder.cnt = syringe1.encoder.cnt - TIM2->CNT;
+				if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe1.encoder.cnt = 0;
+				}
 			}
 #endif
 #ifdef VER2
 			if (syringe1.motor.rotation == UNCLOCKWISE) { // PUSH
 				syringe1.encoder.cnt = syringe1.encoder.cnt - TIM2->CNT;
+				if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe1.encoder.cnt = 0;
+				}
 			}
 			else if (syringe1.motor.rotation == CLOCKWISE) { // PULL
 				syringe1.encoder.cnt = syringe1.encoder.cnt + TIM2->CNT;
+				if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe1.encoder.cnt = MAX_ENCODER_CNT;
+				}
 			}
 #endif
 			TIM2->CNT = 0;
@@ -502,11 +526,15 @@ void	syringe1Timer() {
 		}
 	}
 	else if (syringe1.buttonUp.status == RELEASED) {
+		/*
 		if (syringe1.buttonUp.timer_1 >= syringe1.buttonUp.delayLongClick) {
 			syringe1.buttonUp.timer_1 = 0;
 			syringe1.buttonUp.mode = DEFAULT;
 			syringe1.buttonUp.status = NO_EVENT;
 			syringe1.encoder.cnt = syringe1.encoder.cnt + TIM2->CNT;
+			if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+				syringe1.encoder.cnt = MAX_ENCODER_CNT;
+			}
 			TIM2->CNT = 0;
 			syringe1.stop();
 		}
@@ -517,6 +545,29 @@ void	syringe1Timer() {
 				syringe1.buttonUp.status = NO_EVENT;
 				syringe1.buttonUp.timer_1 = 0;
 				syringe1.buttonUp.timer_2 = 0;
+			}
+		}
+		*/
+		if (syringe1.buttonUp.timer_1 >= syringe1.buttonUp.delayLongClick) {
+			syringe1.buttonUp.timer_1 = 0;
+			syringe1.buttonUp.status = NO_EVENT;
+		}
+		else {
+			if (syringe1.buttonUp.mode == DOUBLE_CLICK) {
+				syringe1.buttonUp.timer_1 = 0;
+				syringe1.buttonUp.mode = DEFAULT;
+				syringe1.buttonUp.status = NO_EVENT;
+				TIM2->CNT = 0;
+				syringe1.stop();
+			}
+			else {
+				syringe1.buttonUp.timer_2++;
+				if (syringe1.buttonUp.timer_2 >= syringe1.buttonUp.delayClick && syringe1.buttonUp.timer_2 < syringe1.buttonUp.delayLongClick) {
+					syringe1.buttonUp.mode = CLICK;
+					syringe1.buttonUp.status = NO_EVENT;
+					syringe1.buttonUp.timer_1 = 0;
+					syringe1.buttonUp.timer_2 = 0;
+				}
 			}
 		}
 	}
@@ -535,11 +586,15 @@ void	syringe1Timer() {
 		}
 	}
 	else if (syringe1.buttonDown.status == RELEASED) {
+		/*
 		if (syringe1.buttonDown.timer_1 >= syringe1.buttonDown.delayLongClick) {
 			syringe1.buttonDown.timer_1 = 0;
 			syringe1.buttonDown.mode = DEFAULT;
 			syringe1.buttonDown.status = NO_EVENT;
 			syringe1.encoder.cnt = syringe1.encoder.cnt - TIM2->CNT;
+			if (syringe1.encoder.cnt > MAX_ENCODER_CNT) {
+				syringe1.encoder.cnt = 0;
+			}
 			TIM2->CNT = 0;
 			syringe1.stop();
 		}
@@ -550,6 +605,29 @@ void	syringe1Timer() {
 				syringe1.buttonDown.status = NO_EVENT;
 				syringe1.buttonDown.timer_1 = 0;
 				syringe1.buttonDown.timer_2 = 0;
+			}
+		}
+		*/
+		if (syringe1.buttonDown.timer_1 >= syringe1.buttonDown.delayLongClick) {
+			syringe1.buttonDown.timer_1 = 0;
+			syringe1.buttonDown.status = NO_EVENT;
+		}
+		else {
+			if (syringe1.buttonDown.mode == DOUBLE_CLICK) {
+				syringe1.buttonDown.timer_1 = 0;
+				syringe1.buttonDown.mode = DEFAULT;
+				syringe1.buttonDown.status = NO_EVENT;
+				TIM2->CNT = 0;
+				syringe1.stop();
+			}
+			else {
+				syringe1.buttonDown.timer_2++;
+				if (syringe1.buttonDown.timer_2 >= syringe1.buttonDown.delayClick && syringe1.buttonDown.timer_2 < syringe1.buttonDown.delayLongClick) {
+					syringe1.buttonDown.mode = CLICK;
+					syringe1.buttonDown.status = NO_EVENT;
+					syringe1.buttonDown.timer_1 = 0;
+					syringe1.buttonDown.timer_2 = 0;
+				}
 			}
 		}
 	}
@@ -590,17 +668,29 @@ void 	syringe2Timer() {
 #ifdef VER1
 				if (syringe2.motor.rotation == UNCLOCKWISE) { // PULL
 					syringe2.encoder.cnt = syringe2.encoder.cnt + TIM3->CNT;
+					if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe2.encoder.cnt = MAX_ENCODER_CNT;
+					}
 				}
 				else if (syringe1.motor.rotation == CLOCKWISE) { // PUSH
 					syringe2.encoder.cnt = syringe2.encoder.cnt - TIM3->CNT;
+					if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe2.encoder.cnt = 0;
+					}
 				}
 #endif
 #ifdef VER2
 				if (syringe2.motor.rotation == UNCLOCKWISE) { // PUSH
 					syringe2.encoder.cnt = syringe2.encoder.cnt - TIM3->CNT;
+					if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe2.encoder.cnt = 0;
+					}
 				}
 				else if (syringe1.motor.rotation == CLOCKWISE) { // PULL
 					syringe2.encoder.cnt = syringe2.encoder.cnt + TIM3->CNT;
+					if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+						syringe2.encoder.cnt = MAX_ENCODER_CNT;
+					}
 				}
 #endif
 				TIM3->CNT = 0;
@@ -610,17 +700,29 @@ void 	syringe2Timer() {
 #ifdef VER1
 			if (syringe2.motor.rotation == UNCLOCKWISE) { // PULL
 				syringe2.encoder.cnt = syringe2.encoder.cnt + TIM3->CNT;
+				if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe2.encoder.cnt = MAX_ENCODER_CNT;
+				}
 			}
 			else if (syringe2.motor.rotation == CLOCKWISE) { // PUSH
 				syringe2.encoder.cnt = syringe2.encoder.cnt - TIM3->CNT;
+				if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe2.encoder.cnt = 0;
+				}
 			}
 #endif
 #ifdef VER2
 			if (syringe2.motor.rotation == UNCLOCKWISE) { // PUSH
 				syringe2.encoder.cnt = syringe2.encoder.cnt - TIM3->CNT;
+				if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe2.encoder.cnt = 0;
+				}
 			}
 			else if (syringe2.motor.rotation == CLOCKWISE) { // PULL
 				syringe2.encoder.cnt = syringe2.encoder.cnt + TIM3->CNT;
+				if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+					syringe2.encoder.cnt = MAX_ENCODER_CNT;
+				}
 			}
 #endif
 			TIM3->CNT = 0;
@@ -791,11 +893,15 @@ void 	syringe2Timer() {
 		}
 	}
 	else if (syringe2.buttonUp.status == RELEASED) {
+		/*
 		if (syringe2.buttonUp.timer_1 >= syringe2.buttonUp.delayLongClick) {
 			syringe2.buttonUp.timer_1 = 0;
 			syringe2.buttonUp.mode = DEFAULT;
 			syringe2.buttonUp.status = NO_EVENT;
 			syringe2.encoder.cnt = syringe2.encoder.cnt + TIM3->CNT;
+			if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+				syringe2.encoder.cnt = MAX_ENCODER_CNT;
+			}
 			TIM3->CNT = 0;
 			syringe2.stop();
 		}
@@ -806,6 +912,29 @@ void 	syringe2Timer() {
 				syringe2.buttonUp.status = NO_EVENT;
 				syringe2.buttonUp.timer_1 = 0;
 				syringe2.buttonUp.timer_2 = 0;
+			}
+		}
+		*/
+		if (syringe2.buttonUp.timer_1 >= syringe2.buttonUp.delayLongClick) {
+			syringe2.buttonUp.timer_1 = 0;
+			syringe2.buttonUp.status = NO_EVENT;
+		}
+		else {
+			if (syringe2.buttonUp.mode == DOUBLE_CLICK) {
+				syringe2.buttonUp.timer_1 = 0;
+				syringe2.buttonUp.mode = DEFAULT;
+				syringe2.buttonUp.status = NO_EVENT;
+				TIM3->CNT = 0;
+				syringe2.stop();
+			}
+			else {
+				syringe2.buttonUp.timer_2++;
+				if (syringe2.buttonUp.timer_2 >= syringe2.buttonUp.delayClick && syringe2.buttonUp.timer_2 < syringe2.buttonUp.delayLongClick) {
+					syringe2.buttonUp.mode = CLICK;
+					syringe2.buttonUp.status = NO_EVENT;
+					syringe2.buttonUp.timer_1 = 0;
+					syringe2.buttonUp.timer_2 = 0;
+				}
 			}
 		}
 	}
@@ -824,11 +953,15 @@ void 	syringe2Timer() {
 		}
 	}
 	else if (syringe2.buttonDown.status == RELEASED) {
+		/*
 		if (syringe2.buttonDown.timer_1 >= syringe2.buttonDown.delayLongClick) {
 			syringe2.buttonDown.timer_1 = 0;
 			syringe2.buttonDown.mode = DEFAULT;
 			syringe2.buttonDown.status = NO_EVENT;
 			syringe2.encoder.cnt = syringe2.encoder.cnt - TIM3->CNT;
+			if (syringe2.encoder.cnt > MAX_ENCODER_CNT) {
+				syringe2.encoder.cnt = 0;
+			}
 			TIM3->CNT = 0;
 			syringe2.stop();
 		}
@@ -841,6 +974,29 @@ void 	syringe2Timer() {
 				syringe2.buttonDown.timer_2 = 0;
 			}
 		}
+		*/
+		if (syringe2.buttonDown.timer_1 >= syringe2.buttonDown.delayLongClick) {
+			syringe2.buttonDown.timer_1 = 0;
+			syringe2.buttonDown.status = NO_EVENT;
+		}
+		else {
+			if (syringe2.buttonDown.mode == DOUBLE_CLICK) {
+				syringe2.buttonDown.timer_1 = 0;
+				syringe2.buttonDown.mode = DEFAULT;
+				syringe2.buttonDown.status = NO_EVENT;
+				TIM3->CNT = 0;
+				syringe2.stop();
+			}
+			else {
+				syringe2.buttonDown.timer_2++;
+				if (syringe2.buttonDown.timer_2 >= syringe2.buttonDown.delayClick && syringe2.buttonDown.timer_2 < syringe2.buttonDown.delayLongClick) {
+					syringe2.buttonDown.mode = CLICK;
+					syringe2.buttonDown.status = NO_EVENT;
+					syringe2.buttonDown.timer_1 = 0;
+					syringe2.buttonDown.timer_2 = 0;
+				}
+			}
+		}
 	}
 	/*==========================================================================================*/
 }
@@ -851,7 +1007,8 @@ void	 syringe1Handler() {
 
 	// LONG CLICK HANDLER
 	if (syringe1.buttonUp.mode == LONG_CLICK) {
-		syringe1.buttonUp.mode = DEFAULT;
+		syringe1.buttonUp.mode = DOUBLE_CLICK;
+		//syringe1.buttonUp.mode = DEFAULT;
 		if (syringe1.startSensor.status != PRESSED && syringe1.cover.state == OPEN) {
 #ifdef VER1
 			syringe1.motor.setRotation(UNCLOCKWISE); // PULL
@@ -868,7 +1025,8 @@ void	 syringe1Handler() {
 		syringe1.stop();
 	}
 	if (syringe1.buttonDown.mode == LONG_CLICK) {
-		syringe1.buttonDown.mode = DEFAULT;
+		syringe1.buttonDown.mode = DOUBLE_CLICK;
+		//syringe1.buttonDown.mode = DEFAULT;
 		if (syringe1.endSensor.status != PRESSED && syringe1.cover.state == OPEN) {
 #ifdef VER1
 			syringe1.motor.setRotation(CLOCKWISE); // PUSH
@@ -924,7 +1082,8 @@ void	 syringe2Handler() {
 
 	// LONG CLICK HANDLER
 	if (syringe2.buttonUp.mode == LONG_CLICK) {
-		syringe2.buttonUp.mode = DEFAULT;
+		syringe2.buttonUp.mode = DOUBLE_CLICK;
+		//syringe2.buttonUp.mode = DEFAULT;
 		if (syringe2.startSensor.status != PRESSED && syringe2.cover.state == OPEN) {
 #ifdef VER1
 			syringe2.motor.setRotation(UNCLOCKWISE);
@@ -941,7 +1100,8 @@ void	 syringe2Handler() {
 		syringe2.stop();
 	}
 	if (syringe2.buttonDown.mode == LONG_CLICK) {
-		syringe2.buttonDown.mode = DEFAULT;
+		syringe2.buttonDown.mode = DOUBLE_CLICK;
+		//syringe2.buttonDown.mode = DEFAULT;
 		if (syringe2.endSensor.status != PRESSED && syringe2.cover.state == OPEN) {
 #ifdef VER1
 			syringe2.motor.setRotation(CLOCKWISE);

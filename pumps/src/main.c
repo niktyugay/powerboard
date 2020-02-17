@@ -47,8 +47,6 @@ void GPIO_Config(void);
 
 bool	flagSoftStartMotor1 = false;
 bool	flagSoftStartMotor2 = false;
-void	softStartMotor1(uint8_t speed);
-void	softStartMotor2(uint8_t speed);
 
 void delay_ms(uint32_t value) {
 	delay = value;
@@ -83,12 +81,10 @@ int main(void)
 	delay_ms(10);
 	initSyringes();
 	delay_ms(10);
-	initUart1(); // нижний драйвер и PC8
+	initUart1(); //  PC8
 	delay_ms(10);
-	initUart3(); // верхний драйвер и PC9
+	initUart3(); //  PC9
 	periphState = true;
-	syringe1.encoder.cnt = 0;
-	syringe2.encoder.cnt = 0;
 	delay_ms(10);
 	SPI_Config();
 

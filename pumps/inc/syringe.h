@@ -11,12 +11,12 @@
 #include "stdbool.h"
 #define DOSE_O_1ML			3697
 #define PERIOD_ENC			50
-#define MAX_VOLUME			200
+#define MAX_VOLUME			214
 #define	MAX_ENCODER_CNT		794500
 #define	ONE_HOUR_MS			3600000
 #define COUNT_OF_PERIOD		5
 #define	DELAY_CLICK			175
-#define	DELAY_LONGCLICK		1000
+#define	DELAY_LONGCLICK		2000
 #define	DELAY_SENSOR_CLICK	100
 
 typedef enum 	{
